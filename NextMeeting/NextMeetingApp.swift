@@ -97,7 +97,7 @@ class StatusBarController: NSObject {
         let str = NSMutableAttributedString(
             string: time + "\n",
             attributes: [
-                .font: NSFont.systemFont(ofSize: 8, weight: .regular),
+                .font: NSFont.systemFont(ofSize: 6, weight: .regular),
                 .foregroundColor: NSColor.labelColor
             ]
         )
