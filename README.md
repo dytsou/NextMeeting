@@ -15,7 +15,7 @@ A macOS menu bar app that shows your next meeting at a glance.
 - Popup list of all remaining meetings today
 - Auto-detects video conferencing links (Zoom, Google Meet, Teams, Webex, Whereby)
 - One-click join button for detected meeting links; **Settings** sets **App** vs **browser** per provider (Zoom, Google Meet, Teams, Webex, Whereby). Unrecognized “other” links always open in the browser (not configurable)
-- **Calendar selection:** in **Settings**, use the **Calendars** tab to limit which Apple Calendar sources are read (per-calendar toggles and a tri-state “select all” checkbox: all, none, or mixed). By default every event calendar is included
+- **Calendar selection:** in **Settings**, use the **Calendars** tab to limit which Apple Calendar sources are read
 - Refreshes every 60 seconds and on calendar changes
 - Supports English and Traditional Chinese (follows system language)
 
