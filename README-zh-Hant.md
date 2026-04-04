@@ -52,7 +52,7 @@
 3. 建置：
 
    ```bash
-   cd ~/src/NextMeeting
+   cd NextMeeting
    ./build.sh
    ```
 
@@ -61,7 +61,7 @@
 **方式 B — 使用 Xcode**（透過 xcodegen 產生專案）：
 
 ```bash
-cd ~/src/NextMeeting
+cd NextMeeting
 ./setup.sh
 ```
 

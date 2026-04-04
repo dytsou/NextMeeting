@@ -52,7 +52,7 @@ Open **Calendar.app** → Preferences → Accounts → add your Google account. 
 3. Build:
 
    ```bash
-   cd ~/src/NextMeeting
+   cd NextMeeting
    ./build.sh
    ```
 
@@ -61,7 +61,7 @@ The script compiles with `swiftc`, creates `NextMeeting.app`, and offers to inst
 **Option B — With Xcode** (uses xcodegen to generate the project):
 
 ```bash
-cd ~/src/NextMeeting
+cd NextMeeting
 ./setup.sh
 ```
 
