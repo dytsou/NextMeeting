@@ -4,7 +4,13 @@ import Combine
 
 @main
 struct NextMeetingApp: App {
-    private let statusBarController = StatusBarController(manager: CalendarManager())
+    private let statusBarController: StatusBarController
+
+    init() {
+        let calendarSelection = CalendarSelectionStore()
+        let manager = CalendarManager(calendarSelection: calendarSelection)
+        statusBarController = StatusBarController(manager: manager, calendarSelection: calendarSelection)
+    }
 
     // MenuBarExtra is no longer used — popover is managed by StatusBarController
     var body: some Scene {
@@ -19,11 +25,13 @@ class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var popover: NSPopover
     private let joinPreferenceStore = JoinPreferenceStore()
+    private let calendarSelectionStore: CalendarSelectionStore
     private var cancellable: AnyCancellable?
     private var sizeObservation: NSKeyValueObservation?
     private var dismissPopoverObserver: NSObjectProtocol?
 
-    init(manager: CalendarManager) {
+    init(manager: CalendarManager, calendarSelection: CalendarSelectionStore) {
+        calendarSelectionStore = calendarSelection
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         popover = NSPopover()
@@ -31,6 +39,7 @@ class StatusBarController: NSObject {
             rootView: MeetingMenuView()
                 .environmentObject(manager)
                 .environmentObject(joinPreferenceStore)
+                .environmentObject(calendarSelectionStore)
         )
         hostingController.sizingOptions = .preferredContentSize
         popover.contentViewController = hostingController

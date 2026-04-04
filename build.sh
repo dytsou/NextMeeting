@@ -30,6 +30,7 @@ SDK=$(xcrun --show-sdk-path --sdk macosx)
 ARCH=$(uname -m)
 
 SWIFT_SRCS=(
+    "$SRC/CalendarSelectionStore.swift"
     "$SRC/CalendarManager.swift"
     "$SRC/JoinPreferenceStore.swift"
     "$SRC/MeetingMenuView.swift"
@@ -93,6 +94,8 @@ echo ""
 # ── Optional: install to /Applications ───────────────────────────────────────
 read -r -p "Install to /Applications? [y/N] " answer
 if [[ "$answer" =~ ^[Yy]$ ]]; then
+    echo "==> Installing to /Applications..."
+    pkill -x "$APP_NAME" 2>/dev/null || true
     cp -r "$APP" /Applications/
     echo "Installed. Launching..."
     open "/Applications/$APP_NAME.app"

@@ -32,6 +32,12 @@
 "settings.title" = "Settings";
 "settings.done" = "Done";
 "settings.back" = "Back";
+"settings.tab.meeting_links" = "Meeting links";
+"settings.tab.calendar_sources" = "Calendars";
+"settings.calendar.select_all" = "Select All";
+"settings.calendar.bulk_toggle_hint" = "Checked: all calendars. Unchecked: none. Dash: some calendars. Click to select all, or click again when all are selected to clear all.";
+"settings.calendar.deselect_all" = "Deselect All";
+"settings.calendar.empty" = "No event calendars found.";
 "settings.calendar_section" = "Calendar";
 "settings.fetch_title" = "Fetch meetings manually";
 "settings.fetch_never" = "Not fetched yet";

@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import EventKit
 
 extension Notification.Name {
     /// Posted before opening a meeting in the browser so the menu popover can dismiss (browser preference or native fallback).
@@ -13,6 +14,7 @@ enum MeetingTab { case today, tomorrow }
 struct MeetingMenuView: View {
     @EnvironmentObject var manager: CalendarManager
     @EnvironmentObject var joinPreferences: JoinPreferenceStore
+    @EnvironmentObject var calendarSelection: CalendarSelectionStore
     @State private var selectedTab: MeetingTab = .today
     @State private var showJoinSettings = false
 
@@ -31,10 +33,13 @@ struct MeetingMenuView: View {
         .frame(width: 340)
         .environmentObject(manager)
         .environmentObject(joinPreferences)
+        .environmentObject(calendarSelection)
         .onAppear { selectedTab = defaultTab }
         .sheet(isPresented: $showJoinSettings) {
             JoinSettingsView()
                 .environmentObject(joinPreferences)
+                .environmentObject(manager)
+                .environmentObject(calendarSelection)
         }
     }
 }
@@ -327,11 +332,76 @@ private struct JoinButton: View {
     }
 }
 
-// MARK: - Join settings sheet
+// MARK: - Tri-state “select all calendars” checkbox (AppKit)
+
+private struct CalendarBulkTriStateCheckbox: NSViewRepresentable {
+    @ObservedObject var store: CalendarSelectionStore
+    let allCalendarIdentifiers: Set<String>
+
+    final class Coordinator: NSObject {
+        var store: CalendarSelectionStore
+        var allIds: Set<String> = []
+
+        init(store: CalendarSelectionStore) {
+            self.store = store
+        }
+
+        @objc func clicked(_ sender: Any?) {
+            let s = store
+            let ids = allIds
+            Task { @MainActor in
+                s.toggleBulkCalendarCheckbox(allCalendarIdentifiers: ids)
+            }
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(store: store)
+    }
+
+    func makeNSView(context: Context) -> NSButton {
+        let button = NSButton(
+            checkboxWithTitle: NSLocalizedString("settings.calendar.select_all", comment: ""),
+            target: context.coordinator,
+            action: #selector(Coordinator.clicked)
+        )
+        button.allowsMixedState = true
+        button.toolTip = NSLocalizedString("settings.calendar.bulk_toggle_hint", comment: "")
+        return button
+    }
+
+    func updateNSView(_ button: NSButton, context: Context) {
+        context.coordinator.store = store
+        context.coordinator.allIds = allCalendarIdentifiers
+        button.title = NSLocalizedString("settings.calendar.select_all", comment: "")
+        button.toolTip = NSLocalizedString("settings.calendar.bulk_toggle_hint", comment: "")
+        let kind = store.bulkSelectionKind(allCalendarIdentifiers: allCalendarIdentifiers)
+        switch kind {
+        case .allOn:
+            button.state = .on
+        case .allOff:
+            button.state = .off
+        case .mixed:
+            button.state = .mixed
+        }
+        button.isEnabled = !allCalendarIdentifiers.isEmpty
+    }
+}
+
+// MARK: - Settings sheet
+
+private enum SettingsSheetTab: Hashable {
+    case meetingLinks
+    case calendarSources
+}
 
 private struct JoinSettingsView: View {
     @EnvironmentObject private var joinPreferences: JoinPreferenceStore
+    @EnvironmentObject private var manager: CalendarManager
+    @EnvironmentObject private var calendarSelection: CalendarSelectionStore
     @Environment(\.dismiss) private var dismiss
+
+    @State private var selectedTab: SettingsSheetTab = .meetingLinks
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -346,35 +416,146 @@ private struct JoinSettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
-            .padding(.bottom, 6)
+            .padding(.bottom, 8)
 
-            Form {
-                Section {
-                    ForEach(MeetingService.joinPreferenceServices, id: \.self) { service in
-                        HStack(alignment: .center) {
-                            Text(LocalizedStringKey(service.joinSettingsLabelKey))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                            Picker("", selection: Binding(
-                                get: { joinPreferences.mode(for: service) },
-                                set: { joinPreferences.setMode($0, for: service) }
-                            )) {
-                                Text("settings.join.native").tag(JoinOpenMode.native)
-                                Text("settings.join.browser").tag(JoinOpenMode.browser)
-                            }
-                            .labelsHidden()
-                            .frame(width: 196)
-                            .pickerStyle(.segmented)
-                        }
-                        .padding(.vertical, 2)
-                    }
-                } header: {
-                    Text("settings.join.section")
+            Picker("", selection: $selectedTab) {
+                Text("settings.tab.meeting_links").tag(SettingsSheetTab.meetingLinks)
+                Text("settings.tab.calendar_sources").tag(SettingsSheetTab.calendarSources)
+            }
+            .labelsHidden()
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+            Divider()
+
+            Group {
+                switch selectedTab {
+                case .meetingLinks:
+                    meetingLinksPane
+                case .calendarSources:
+                    CalendarSourcesSettingsPane()
                 }
             }
-            .formStyle(.grouped)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 360, height: 340)
+        .frame(width: 380, height: 420)
         .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    private var meetingLinksPane: some View {
+        Form {
+            Section {
+                ForEach(MeetingService.joinPreferenceServices, id: \.self) { service in
+                    HStack(alignment: .center) {
+                        Text(LocalizedStringKey(service.joinSettingsLabelKey))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Picker("", selection: Binding(
+                            get: { joinPreferences.mode(for: service) },
+                            set: { joinPreferences.setMode($0, for: service) }
+                        )) {
+                            Text("settings.join.native").tag(JoinOpenMode.native)
+                            Text("settings.join.browser").tag(JoinOpenMode.browser)
+                        }
+                        .labelsHidden()
+                        .frame(width: 196)
+                        .pickerStyle(.segmented)
+                    }
+                    .padding(.vertical, 2)
+                }
+            } header: {
+                Text("settings.join.section")
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct CalendarSourcesSettingsPane: View {
+    @EnvironmentObject private var manager: CalendarManager
+    @EnvironmentObject private var calendarSelection: CalendarSelectionStore
+
+    var body: some View {
+        Group {
+            if !manager.isAuthorized {
+                VStack(spacing: 12) {
+                    Text("auth.required")
+                        .font(.subheadline)
+                        .multilineTextAlignment(.center)
+                    Button("auth.grant") {
+                        manager.requestAccess()
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(24)
+            } else {
+                calendarListContent
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var calendarListContent: some View {
+        let calendars = manager.eventCalendarsForSettings()
+        let allIds = Set(calendars.map(\.calendarIdentifier))
+
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("settings.calendar_section")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                CalendarBulkTriStateCheckbox(store: calendarSelection, allCalendarIdentifiers: allIds)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 10)
+            .padding(.bottom, 8)
+
+            if calendars.isEmpty {
+                Text("settings.calendar.empty")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(24)
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(calendars.enumerated()), id: \.element.calendarIdentifier) { index, cal in
+                            if index > 0 {
+                                Divider()
+                                    .padding(.leading, 16)
+                            }
+                            calendarRow(cal, allIds: allIds)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+
+    private func calendarRow(_ cal: EKCalendar, allIds: Set<String>) -> some View {
+        Toggle(isOn: Binding(
+            get: { calendarSelection.isCalendarIncluded(cal.calendarIdentifier, allCalendarIdentifiers: allIds) },
+            set: { calendarSelection.setCalendarIncluded(cal.calendarIdentifier, included: $0, allCalendarIdentifiers: allIds) }
+        )) {
+            HStack(spacing: 8) {
+                calendarColorDot(cal.cgColor)
+                Text(cal.title)
+                    .lineLimit(1)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+    }
+
+    private func calendarColorDot(_ cgColor: CGColor) -> some View {
+        let color = NSColor(cgColor: cgColor) ?? .secondaryLabelColor
+        return Circle()
+            .fill(Color(nsColor: color))
+            .frame(width: 10, height: 10)
     }
 }
 

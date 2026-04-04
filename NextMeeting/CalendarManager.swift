@@ -57,6 +57,7 @@ enum MeetingService {
 @MainActor
 class CalendarManager: ObservableObject {
     private let eventStore = EKEventStore()
+    private let calendarSelection: CalendarSelectionStore
 
     @Published var nextMeeting: Meeting?
     @Published var upcomingMeetings: [Meeting] = []
@@ -65,17 +66,39 @@ class CalendarManager: ObservableObject {
 
     private var timer: Timer?
     private var notificationObserver: NSObjectProtocol?
+    private var selectionCancellable: AnyCancellable?
 
-    init() {
+    init(calendarSelection: CalendarSelectionStore) {
+        self.calendarSelection = calendarSelection
         checkAndFetch()
         setupChangeObserver()
+        selectionCancellable = calendarSelection.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.fetchMeetings()
+            }
     }
 
     deinit {
         timer?.invalidate()
+        selectionCancellable?.cancel()
         if let observer = notificationObserver {
             NotificationCenter.default.removeObserver(observer)
         }
+    }
+
+    /// Event calendars for the Calendar Sources settings tab, sorted by title.
+    func eventCalendarsForSettings() -> [EKCalendar] {
+        eventStore.calendars(for: .event).sorted {
+            $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+        }
+    }
+
+    /// `nil` = all calendars; non-`nil` = explicit subset (possibly empty).
+    private func calendarsForPredicate() -> [EKCalendar]? {
+        guard let ids = calendarSelection.calendarIdentifiersForFetch() else { return nil }
+        let all = eventStore.calendars(for: .event)
+        return all.filter { ids.contains($0.calendarIdentifier) }
     }
 
     // MARK: Authorization
@@ -146,7 +169,8 @@ class CalendarManager: ObservableObject {
         let searchStart = calendar.date(byAdding: .hour, value: -4, to: now) ?? now
         guard let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: now) else { return }
 
-        let todayPredicate = eventStore.predicateForEvents(withStart: searchStart, end: endOfToday, calendars: nil)
+        let calendarFilter = calendarsForPredicate()
+        let todayPredicate = eventStore.predicateForEvents(withStart: searchStart, end: endOfToday, calendars: calendarFilter)
         let todayEvents = eventStore.events(matching: todayPredicate)
 
         let meetings = todayEvents
@@ -162,7 +186,7 @@ class CalendarManager: ObservableObject {
               let startOfTomorrow = calendar.date(bySettingHour: 0, minute: 0, second: 0, of: tomorrow),
               let endOfTomorrow = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: tomorrow) else { return }
 
-        let tomorrowPredicate = eventStore.predicateForEvents(withStart: startOfTomorrow, end: endOfTomorrow, calendars: nil)
+        let tomorrowPredicate = eventStore.predicateForEvents(withStart: startOfTomorrow, end: endOfTomorrow, calendars: calendarFilter)
         let tomorrowEvents = eventStore.events(matching: tomorrowPredicate)
 
         tomorrowMeetings = tomorrowEvents
