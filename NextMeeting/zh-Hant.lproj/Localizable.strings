@@ -26,6 +26,7 @@
 "footer.open_calendar" = "開啟行事曆";
 "footer.settings" = "設定";
 "footer.quit" = "結束";
+"footer.copyright" = "Copyright © 2026 dytsou";
 
 /* Settings */
 "settings.title" = "設定";

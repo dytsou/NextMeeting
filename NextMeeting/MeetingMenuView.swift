@@ -223,20 +223,26 @@ private struct JoinButton: View {
 
 private struct FooterView: View {
     var body: some View {
-        HStack {
-            Button("footer.open_calendar") {
-                NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app"))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Color.accentColor)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Button("footer.open_calendar") {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app"))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
 
-            Spacer()
+                Spacer()
 
-            Button("footer.quit") {
-                NSApplication.shared.terminate(nil)
+                Button("footer.quit") {
+                    NSApplication.shared.terminate(nil)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
+            Text("footer.copyright")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
