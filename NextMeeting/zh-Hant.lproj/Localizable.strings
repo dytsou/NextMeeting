@@ -30,11 +30,21 @@
 
 /* Settings */
 "settings.title" = "設定";
+"settings.done" = "完成";
 "settings.back" = "返回";
 "settings.calendar_section" = "行事曆";
 "settings.fetch_title" = "手動擷取會議";
 "settings.fetch_never" = "尚未擷取";
 "settings.fetch_button" = "立即擷取";
+"settings.join.section" = "以何種方式開啟會議";
+"settings.join.native" = "App";
+"settings.join.browser" = "瀏覽器";
+"settings.join.zoom" = "Zoom";
+"settings.join.google_meet" = "Google Meet";
+"settings.join.teams" = "Microsoft Teams";
+"settings.join.webex" = "Webex";
+"settings.join.whereby" = "Whereby";
+"settings.join.other" = "其他連結";
 
 /* Join button fallback (when service is unknown) */
 "join.button" = "加入";

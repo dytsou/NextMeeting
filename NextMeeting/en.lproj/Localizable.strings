@@ -30,11 +30,21 @@
 
 /* Settings */
 "settings.title" = "Settings";
+"settings.done" = "Done";
 "settings.back" = "Back";
 "settings.calendar_section" = "Calendar";
 "settings.fetch_title" = "Fetch meetings manually";
 "settings.fetch_never" = "Not fetched yet";
 "settings.fetch_button" = "Fetch Now";
+"settings.join.section" = "Open meetings with";
+"settings.join.native" = "App";
+"settings.join.browser" = "Browser";
+"settings.join.zoom" = "Zoom";
+"settings.join.google_meet" = "Google Meet";
+"settings.join.teams" = "Microsoft Teams";
+"settings.join.webex" = "Webex";
+"settings.join.whereby" = "Whereby";
+"settings.join.other" = "Other links";
 
 /* Join button fallback (when service is unknown) */
 "join.button" = "Join";

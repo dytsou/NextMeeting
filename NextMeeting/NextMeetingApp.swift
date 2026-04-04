@@ -18,15 +18,19 @@ struct NextMeetingApp: App {
 class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var popover: NSPopover
+    private let joinPreferenceStore = JoinPreferenceStore()
     private var cancellable: AnyCancellable?
     private var sizeObservation: NSKeyValueObservation?
+    private var dismissPopoverObserver: NSObjectProtocol?
 
     init(manager: CalendarManager) {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         popover = NSPopover()
         let hostingController = NSHostingController(
-            rootView: MeetingMenuView().environmentObject(manager)
+            rootView: MeetingMenuView()
+                .environmentObject(manager)
+                .environmentObject(joinPreferenceStore)
         )
         hostingController.sizingOptions = .preferredContentSize
         popover.contentViewController = hostingController
@@ -53,6 +57,23 @@ class StatusBarController: NSObject {
         cancellable = manager.$nextMeeting
             .receive(on: RunLoop.main)
             .sink { [weak self] meeting in self?.update(meeting: meeting) }
+
+        dismissPopoverObserver = NotificationCenter.default.addObserver(
+            forName: .nextMeetingDismissPopover,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.popover.isShown else { return }
+                self.popover.performClose(nil)
+            }
+        }
+    }
+
+    deinit {
+        if let dismissPopoverObserver {
+            NotificationCenter.default.removeObserver(dismissPopoverObserver)
+        }
     }
 
     @objc private func togglePopover() {

@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# Always use paths relative to this script (repo root), not the caller's cwd.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 APP_NAME="NextMeeting"
 BUNDLE_ID="com.nextmeeting.app"
 APP="${APP_NAME}.app"
@@ -25,6 +29,20 @@ echo "==> Compiling Swift sources..."
 SDK=$(xcrun --show-sdk-path --sdk macosx)
 ARCH=$(uname -m)
 
+SWIFT_SRCS=(
+    "$SRC/CalendarManager.swift"
+    "$SRC/JoinPreferenceStore.swift"
+    "$SRC/MeetingMenuView.swift"
+    "$SRC/NextMeetingApp.swift"
+)
+for f in "${SWIFT_SRCS[@]}"; do
+    if [[ ! -f "$f" ]]; then
+        echo "Error: missing source file: $f" >&2
+        echo "Pull the latest repo; JoinPreferenceStore.swift must exist next to the other Swift sources." >&2
+        exit 1
+    fi
+done
+
 swiftc \
     -sdk "$SDK" \
     -target "${ARCH}-apple-macos13.0" \
@@ -33,9 +51,7 @@ swiftc \
     -framework AppKit \
     -framework EventKit \
     -O \
-    "$SRC/NextMeetingApp.swift" \
-    "$SRC/CalendarManager.swift" \
-    "$SRC/MeetingMenuView.swift" \
+    "${SWIFT_SRCS[@]}" \
     -o "$APP/Contents/MacOS/$APP_NAME"
 
 echo "==> Copying resources..."

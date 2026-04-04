@@ -8,7 +8,7 @@
 - 會議進行中時顯示「進行中」
 - 點擊展開今日剩餘所有會議清單
 - 自動偵測視訊會議連結（Zoom、Google Meet、Teams、Webex、Whereby）
-- 偵測到連結時顯示一鍵加入按鈕
+- 偵測到連結時顯示一鍵加入按鈕；**設定**可為各服務（Zoom、Google Meet、Teams、Webex、Whereby）分別選擇以 **App** 或**瀏覽器**開啟；無法辨識的「其他」連結一律以瀏覽器開啟（無設定項）
 - 每 60 秒自動更新，行事曆有異動時立即刷新
 - 支援英文與繁體中文（依系統語言自動切換）
 
@@ -75,6 +75,7 @@ NextMeeting/
 └── NextMeeting/
     ├── NextMeetingApp.swift        # App 進入點 + 選單列 label
     ├── CalendarManager.swift       # EventKit + 視訊連結偵測
+    ├── JoinPreferenceStore.swift   # UserDefaults：各服務以 App 或瀏覽器開啟
     ├── MeetingMenuView.swift       # 彈出視窗 UI
     ├── Info.plist                  # 行事曆權限說明
     ├── NextMeeting.entitlements    # 沙盒 + 行事曆存取
@@ -96,6 +97,8 @@ NextMeeting/
 | Whereby         | `whereby.com`         |
 
 連結偵測範圍包含：活動 URL、備註、地點欄位。
+
+**加入會議的行為：** 在選單面板中開啟**設定**，可為列出的提供者選擇 **App**（預設）或**瀏覽器**。**瀏覽器**一律先關閉面板，再以預設瀏覽器開啟可於網頁使用的 HTTPS 連結。**App** 則先請 macOS 開啟原始連結；若無對應程式，則關閉面板並改以 HTTPS 對應（`zoommtg://`、`gmeet://`、Teams／Meet 等）。未對應到這些提供者的連結一律走**瀏覽器**流程。偏好設定儲存在 UserDefaults。
 
 ## 新增語言
 

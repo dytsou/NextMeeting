@@ -8,7 +8,7 @@ A macOS menu bar app that shows your next Google Calendar meeting at a glance.
 - Shows "In Progress" when a meeting is currently active
 - Popup list of all remaining meetings today
 - Auto-detects video conferencing links (Zoom, Google Meet, Teams, Webex, Whereby)
-- One-click join button for detected meeting links
+- One-click join button for detected meeting links; **Settings** sets **App** vs **browser** per provider (Zoom, Google Meet, Teams, Webex, Whereby). Unrecognized “other” links always open in the browser (not configurable)
 - Refreshes every 60 seconds and on calendar changes
 - Supports English and Traditional Chinese (follows system language)
 
@@ -75,6 +75,7 @@ NextMeeting/
 └── NextMeeting/
     ├── NextMeetingApp.swift        # App entry point + menu bar label
     ├── CalendarManager.swift       # EventKit + video link detection
+    ├── JoinPreferenceStore.swift   # UserDefaults: App vs browser per service
     ├── MeetingMenuView.swift       # Popup UI
     ├── Info.plist                  # Calendar permission descriptions
     ├── NextMeeting.entitlements    # Sandbox + calendar entitlements
@@ -96,6 +97,8 @@ NextMeeting/
 | Whereby         | `whereby.com`         |
 
 Links are detected from the event URL, notes, and location fields.
+
+**Join behavior:** Use **Settings** to set each listed provider to **App** (default) or **Browser**. **Browser** always opens a web-safe HTTPS link in your default browser and closes the panel first. **App** asks macOS to open the original URL; if no handler is installed, it closes the panel and falls back to the same HTTPS mapping as before (`zoommtg://` → `https://zoom.us/j/…`, `gmeet://` → Meet web, Teams/Meet hosts normalized to `https`, etc.). Links that are not matched to those providers always use the **Browser** path. Preferences are stored in UserDefaults.
 
 ## Adding a New Language
 

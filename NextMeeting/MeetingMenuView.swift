@@ -1,13 +1,20 @@
 import SwiftUI
 import AppKit
 
+extension Notification.Name {
+    /// Posted before opening a meeting in the browser so the menu popover can dismiss (browser preference or native fallback).
+    static let nextMeetingDismissPopover = Notification.Name("NextMeetingDismissPopover")
+}
+
 // MARK: - Root Menu View
 
 enum MeetingTab { case today, tomorrow }
 
 struct MeetingMenuView: View {
     @EnvironmentObject var manager: CalendarManager
+    @EnvironmentObject var joinPreferences: JoinPreferenceStore
     @State private var selectedTab: MeetingTab = .today
+    @State private var showJoinSettings = false
 
     private var defaultTab: MeetingTab {
         manager.upcomingMeetings.isEmpty ? .tomorrow : .today
@@ -15,7 +22,7 @@ struct MeetingMenuView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HeaderView(selectedTab: $selectedTab)
+            HeaderView(selectedTab: $selectedTab, showJoinSettings: $showJoinSettings)
             Divider()
             ContentView(selectedTab: selectedTab)
             Divider()
@@ -23,7 +30,12 @@ struct MeetingMenuView: View {
         }
         .frame(width: 340)
         .environmentObject(manager)
+        .environmentObject(joinPreferences)
         .onAppear { selectedTab = defaultTab }
+        .sheet(isPresented: $showJoinSettings) {
+            JoinSettingsView()
+                .environmentObject(joinPreferences)
+        }
     }
 }
 
@@ -32,6 +44,7 @@ struct MeetingMenuView: View {
 private struct HeaderView: View {
     @EnvironmentObject var manager: CalendarManager
     @Binding var selectedTab: MeetingTab
+    @Binding var showJoinSettings: Bool
 
     var body: some View {
         VStack(spacing: 8) {
@@ -44,14 +57,25 @@ private struct HeaderView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button {
-                    manager.fetchMeetings()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Button {
+                        manager.fetchMeetings()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("header.refresh"))
+
+                    Button {
+                        showJoinSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help(Text("footer.settings"))
                 }
-                .buttonStyle(.plain)
-                .help(Text("header.refresh"))
             }
 
             Picker("", selection: $selectedTab) {
@@ -192,15 +216,99 @@ struct MeetingRow: View {
     }
 }
 
+// MARK: - Meeting join URL
+
+private func openMeetingJoinURL(url: URL, mode: JoinOpenMode) {
+    switch mode {
+    case .browser:
+        let target = url.browserFallbackJoinURL() ?? url
+        NotificationCenter.default.post(name: .nextMeetingDismissPopover, object: nil)
+        _ = NSWorkspace.shared.open(target)
+    case .native:
+        if NSWorkspace.shared.open(url) { return }
+        NotificationCenter.default.post(name: .nextMeetingDismissPopover, object: nil)
+        guard let fallback = url.browserFallbackJoinURL() else { return }
+        _ = NSWorkspace.shared.open(fallback)
+    }
+}
+
+private extension URL {
+    /// HTTPS (or same http/s) URL to open in the default browser when the native handler is missing.
+    func browserFallbackJoinURL() -> URL? {
+        let scheme = (self.scheme ?? "").lowercased()
+        if scheme == "http" || scheme == "https" {
+            return self
+        }
+        if scheme == "zoommtg" {
+            return zoomWebURLFromZoommtg()
+        }
+        if scheme == "gmeet" {
+            return googleMeetWebURLFromGmeet()
+        }
+        let lower = absoluteString.lowercased()
+        if lower.contains("teams.microsoft.com") || lower.contains("meet.google.com") {
+            var comps = URLComponents(url: self, resolvingAgainstBaseURL: false)
+            comps?.scheme = "https"
+            return comps?.url
+        }
+        return nil
+    }
+
+    private func zoomWebURLFromZoommtg() -> URL? {
+        guard let comps = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return nil }
+        let items = comps.queryItems ?? []
+        let confnoFromQuery = items.first { $0.name.lowercased() == "confno" }?.value
+        let confnoFromPath: String? = {
+            let p = comps.path
+            guard let r = p.range(of: "/j/") else { return nil }
+            let after = p[r.upperBound...]
+            let segment = after.split(separator: "/").first.map(String.init)
+            return segment.flatMap { $0.isEmpty ? nil : $0 }
+        }()
+        guard let confno = confnoFromQuery ?? confnoFromPath, !confno.isEmpty else { return nil }
+        let pwd = items.first { $0.name.lowercased() == "pwd" }?.value
+        var web = URLComponents()
+        web.scheme = "https"
+        web.host = "zoom.us"
+        web.path = "/j/\(confno)"
+        if let pwd, !pwd.isEmpty {
+            web.queryItems = [URLQueryItem(name: "pwd", value: pwd)]
+        }
+        return web.url
+    }
+
+    /// `gmeet://meeting-code` (Google Meet iOS / app deep link) → `https://meet.google.com/meeting-code`
+    private func googleMeetWebURLFromGmeet() -> URL? {
+        guard var comps = URLComponents(url: self, resolvingAgainstBaseURL: false) else { return nil }
+        if comps.host?.lowercased() == "meet.google.com" {
+            comps.scheme = "https"
+            return comps.url
+        }
+        let trimmedPath = comps.path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        let code: String? = {
+            if let host = comps.host, !host.isEmpty { return host }
+            if !trimmedPath.isEmpty { return trimmedPath }
+            return nil
+        }()
+        guard let code, !code.isEmpty else { return nil }
+        var web = URLComponents()
+        web.scheme = "https"
+        web.host = "meet.google.com"
+        web.path = "/\(code)"
+        return web.url
+    }
+}
+
 // MARK: - Join Button
 
 private struct JoinButton: View {
+    @EnvironmentObject private var joinPreferences: JoinPreferenceStore
     let url: URL
     let service: MeetingService
 
     var body: some View {
         Button {
-            NSWorkspace.shared.open(url)
+            openMeetingJoinURL(url: url, mode: joinPreferences.mode(for: service))
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "video.fill")
@@ -216,6 +324,57 @@ private struct JoinButton: View {
         }
         .buttonStyle(.plain)
         .help(String(format: NSLocalizedString("row.join_help", comment: ""), service.displayName))
+    }
+}
+
+// MARK: - Join settings sheet
+
+private struct JoinSettingsView: View {
+    @EnvironmentObject private var joinPreferences: JoinPreferenceStore
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("settings.title")
+                    .font(.headline)
+                Spacer()
+                Button("settings.done") {
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+
+            Form {
+                Section {
+                    ForEach(MeetingService.joinPreferenceServices, id: \.self) { service in
+                        HStack(alignment: .center) {
+                            Text(LocalizedStringKey(service.joinSettingsLabelKey))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Picker("", selection: Binding(
+                                get: { joinPreferences.mode(for: service) },
+                                set: { joinPreferences.setMode($0, for: service) }
+                            )) {
+                                Text("settings.join.native").tag(JoinOpenMode.native)
+                                Text("settings.join.browser").tag(JoinOpenMode.browser)
+                            }
+                            .labelsHidden()
+                            .frame(width: 196)
+                            .pickerStyle(.segmented)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                } header: {
+                    Text("settings.join.section")
+                }
+            }
+            .formStyle(.grouped)
+        }
+        .frame(width: 360, height: 340)
+        .padding(.bottom, 8)
     }
 }
 
