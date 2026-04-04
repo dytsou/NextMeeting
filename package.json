@@ -1,6 +1,6 @@
 {
   "name": "next-meeting",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "license": "MIT",
   "devDependencies": {
     "@semantic-release/commit-analyzer": "^13.0.0",
