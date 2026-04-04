@@ -380,6 +380,10 @@ private struct JoinSettingsView: View {
 
 // MARK: - Footer
 
+private enum FooterLinks {
+    static let license = URL(string: "https://github.com/dytsou/NextMeeting/blob/main/LICENSE")!
+}
+
 private struct FooterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -398,10 +402,13 @@ private struct FooterView: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
             }
-            Text("footer.copyright")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .frame(maxWidth: .infinity)
+            Link(destination: FooterLinks.license) {
+                Text("footer.copyright")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
