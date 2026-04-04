@@ -32,6 +32,12 @@
 "settings.title" = "設定";
 "settings.done" = "完成";
 "settings.back" = "返回";
+"settings.tab.meeting_links" = "會議連結";
+"settings.tab.calendar_sources" = "行事曆來源";
+"settings.calendar.select_all" = "全選";
+"settings.calendar.bulk_toggle_hint" = "勾選：全部行事曆。未勾選：無。橫線：僅部分。按一下可全選；全部勾選時再按可全部取消。";
+"settings.calendar.deselect_all" = "全不選";
+"settings.calendar.empty" = "找不到任何事件行事曆。";
 "settings.calendar_section" = "行事曆";
 "settings.fetch_title" = "手動擷取會議";
 "settings.fetch_never" = "尚未擷取";

@@ -30,6 +30,7 @@ SDK=$(xcrun --show-sdk-path --sdk macosx)
 ARCH=$(uname -m)
 
 SWIFT_SRCS=(
+    "$SRC/CalendarSelectionStore.swift"
     "$SRC/CalendarManager.swift"
     "$SRC/JoinPreferenceStore.swift"
     "$SRC/MeetingMenuView.swift"

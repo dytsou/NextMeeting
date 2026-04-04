@@ -8,6 +8,7 @@ ARCH      := $(shell uname -m)
 TARGET    := $(ARCH)-apple-macos13.0
 
 SWIFT_SRCS := \
+	$(SRC)/CalendarSelectionStore.swift \
 	$(SRC)/CalendarManager.swift \
 	$(SRC)/JoinPreferenceStore.swift \
 	$(SRC)/MeetingMenuView.swift \
