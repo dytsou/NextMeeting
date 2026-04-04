@@ -2,6 +2,10 @@
 
 在 Mac 選單列顯示下一場會議的 macOS 小工具。
 
+![NextMeeting](./NextMeeting/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)
+
+![Screenshot](./NextMeeting/screenshot.jpg)
+
 ## 功能
 
 - 在選單列顯示下一場會議的開始時間

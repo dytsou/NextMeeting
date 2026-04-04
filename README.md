@@ -2,6 +2,10 @@
 
 A macOS menu bar app that shows your next meeting at a glance.
 
+![NextMeeting](./NextMeeting/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)
+
+![Screenshot](./NextMeeting/screenshot.jpg)
+
 ## Features
 
 - Displays the next meeting time in the menu bar
