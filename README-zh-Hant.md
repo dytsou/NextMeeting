@@ -1,6 +1,6 @@
 # NextMeeting
 
-在 Mac 選單列顯示下一場 Google Calendar 會議的 macOS 小工具。
+在 Mac 選單列顯示下一場會議的 macOS 小工具。
 
 ## 功能
 

@@ -1,6 +1,6 @@
 # NextMeeting
 
-A macOS menu bar app that shows your next Google Calendar meeting at a glance.
+A macOS menu bar app that shows your next meeting at a glance.
 
 ## Features
 
