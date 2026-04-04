@@ -395,6 +395,19 @@ private enum SettingsSheetTab: Hashable {
     case calendarSources
 }
 
+/// Same vibrancy material as `NSPopover` content (SwiftUI `Material` has no `.popover` on macOS).
+private struct PopoverMaterialBackgroundView: NSViewRepresentable {
+    func makeNSView(context: Context) -> NSVisualEffectView {
+        let view = NSVisualEffectView()
+        view.material = .popover
+        view.blendingMode = .behindWindow
+        view.state = .active
+        return view
+    }
+
+    func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
+}
+
 private struct JoinSettingsView: View {
     @EnvironmentObject private var joinPreferences: JoinPreferenceStore
     @EnvironmentObject private var manager: CalendarManager
@@ -441,6 +454,10 @@ private struct JoinSettingsView: View {
         }
         .frame(width: 380, height: 420)
         .padding(.bottom, 8)
+        .background {
+            PopoverMaterialBackgroundView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
     }
 
     @ViewBuilder
