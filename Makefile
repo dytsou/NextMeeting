@@ -8,9 +8,10 @@ ARCH      := $(shell uname -m)
 TARGET    := $(ARCH)-apple-macos13.0
 
 SWIFT_SRCS := \
-	$(SRC)/NextMeetingApp.swift \
 	$(SRC)/CalendarManager.swift \
-	$(SRC)/MeetingMenuView.swift
+	$(SRC)/JoinPreferenceStore.swift \
+	$(SRC)/MeetingMenuView.swift \
+	$(SRC)/NextMeetingApp.swift
 
 .PHONY: all build setup clean install
 
