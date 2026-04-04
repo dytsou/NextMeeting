@@ -52,6 +52,7 @@ Open **Calendar.app** → Preferences → Accounts → add your Google account. 
 3. Build:
 
    ```bash
+   git clone https://github.com/dytsou/NextMeeting.git
    cd NextMeeting
    ./build.sh
    ```
@@ -61,6 +62,7 @@ The script compiles with `swiftc`, creates `NextMeeting.app`, and offers to inst
 **Option B — With Xcode** (uses xcodegen to generate the project):
 
 ```bash
+git clone https://github.com/dytsou/NextMeeting.git
 cd NextMeeting
 ./setup.sh
 ```
