@@ -1,0 +1,39 @@
+name: NextMeeting
+
+options:
+  bundleIdPrefix: com.nextmeeting
+  deploymentTarget:
+    macOS: "13.0"
+  xcodeVersion: "15"
+
+targets:
+  NextMeeting:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: NextMeeting
+        excludes:
+          - "**/*.entitlements"
+          - "Info.plist"
+          - "**/Assets.xcassets/**"
+    resources:
+      - path: NextMeeting/Assets.xcassets
+    info:
+      path: NextMeeting/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: NextMeeting
+        CFBundleLocalizations:
+          - en
+          - zh-Hant
+        NSCalendarsUsageDescription: "NextMeeting needs calendar access to display your upcoming meetings."
+        NSCalendarsFullAccessUsageDescription: "NextMeeting needs full calendar access to display your upcoming meetings."
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.nextmeeting.app
+      SWIFT_VERSION: "5.9"
+      MACOSX_DEPLOYMENT_TARGET: "13.0"
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+      ENABLE_HARDENED_RUNTIME: YES
+      CODE_SIGN_ENTITLEMENTS: NextMeeting/NextMeeting.entitlements
+      CODE_SIGN_STYLE: Automatic

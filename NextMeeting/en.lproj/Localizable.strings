@@ -1,0 +1,42 @@
+/* Menu bar label */
+"label.in_progress" = "In Progress";
+"label.no_meeting" = "No meeting";
+
+/* Header */
+"header.title" = "Today's Meetings";
+"header.refresh" = "Refresh";
+
+/* Tabs */
+"tab.today" = "Today";
+"tab.tomorrow" = "Tomorrow";
+
+/* Auth */
+"auth.required" = "Calendar access required";
+"auth.grant" = "Grant Access";
+
+/* Empty state */
+"empty.no_meetings" = "No more meetings today";
+"empty.no_meetings_tomorrow" = "No more meetings tomorrow";
+
+/* Meeting row */
+"row.in_progress" = "In Progress";
+"row.join_help" = "Join %@ meeting";
+
+/* Footer */
+"footer.open_calendar" = "Open Calendar";
+"footer.settings" = "Settings";
+"footer.quit" = "Quit";
+
+/* Settings */
+"settings.title" = "Settings";
+"settings.back" = "Back";
+"settings.calendar_section" = "Calendar";
+"settings.fetch_title" = "Fetch meetings manually";
+"settings.fetch_never" = "Not fetched yet";
+"settings.fetch_button" = "Fetch Now";
+
+/* Join button fallback (when service is unknown) */
+"join.button" = "Join";
+
+/* Fallback */
+"event.untitled" = "Untitled";

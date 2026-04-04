@@ -1,0 +1,84 @@
+APP_NAME  := NextMeeting
+BUNDLE_ID := com.nextmeeting.app
+APP       := $(APP_NAME).app
+SRC       := NextMeeting
+
+SDK       := $(shell xcrun --show-sdk-path --sdk macosx)
+ARCH      := $(shell uname -m)
+TARGET    := $(ARCH)-apple-macos13.0
+
+SWIFT_SRCS := \
+	$(SRC)/NextMeetingApp.swift \
+	$(SRC)/CalendarManager.swift \
+	$(SRC)/MeetingMenuView.swift
+
+.PHONY: all build setup clean install
+
+all: build
+
+## Build the .app bundle
+build:
+	@echo "==> Cleaning previous build..."
+	@rm -rf "$(APP)"
+	@echo "==> Creating .app bundle structure..."
+	@mkdir -p "$(APP)/Contents/MacOS"
+	@mkdir -p "$(APP)/Contents/Resources"
+	@echo "==> Compiling Swift sources..."
+	swiftc \
+		-sdk "$(SDK)" \
+		-target "$(TARGET)" \
+		-parse-as-library \
+		-framework SwiftUI \
+		-framework AppKit \
+		-framework EventKit \
+		-O \
+		$(SWIFT_SRCS) \
+		-o "$(APP)/Contents/MacOS/$(APP_NAME)"
+	@echo "==> Copying resources..."
+	@sed \
+		-e "s/\$$(PRODUCT_BUNDLE_IDENTIFIER)/$(BUNDLE_ID)/g" \
+		-e "s/\$$(EXECUTABLE_NAME)/$(APP_NAME)/g" \
+		-e "s/\$$(PRODUCT_NAME)/$(APP_NAME)/g" \
+		-e "s/\$$(DEVELOPMENT_LANGUAGE)/en/g" \
+		"$(SRC)/Info.plist" > "$(APP)/Contents/Info.plist"
+	@printf 'APPL????' > "$(APP)/Contents/PkgInfo"
+	@cp -r "$(SRC)/en.lproj"       "$(APP)/Contents/Resources/"
+	@cp -r "$(SRC)/zh-Hant.lproj"  "$(APP)/Contents/Resources/"
+	@echo "==> App icon: packing AppIcon.icns from Assets.xcassets..."
+	@ASSET="$(SRC)/Assets.xcassets/AppIcon.appiconset"; \
+	if [ -f "$$ASSET/Contents.json" ]; then \
+		WORK=$$(mktemp -d); \
+		mkdir -p "$$WORK/AppIcon.iconset"; \
+		cp "$$ASSET"/icon_*.png "$$WORK/AppIcon.iconset/"; \
+		iconutil -c icns "$$WORK/AppIcon.iconset" -o "$(APP)/Contents/Resources/AppIcon.icns"; \
+		rm -rf "$$WORK"; \
+	else \
+		echo "Warning: missing $$ASSET — restore NextMeeting/Assets.xcassets/AppIcon.appiconset from the repo."; \
+	fi
+	@echo "==> Signing (ad-hoc)..."
+	@codesign --force --deep --sign - \
+		--entitlements "$(SRC)/NextMeeting.entitlements" \
+		"$(APP)"
+	@echo ""
+	@echo "Build complete: ./$(APP)"
+
+## Install to /Applications, kill any running instance, and relaunch
+install: build
+	@echo "==> Installing to /Applications..."
+	@pkill -x "$(APP_NAME)" 2>/dev/null || true
+	cp -r "$(APP)" /Applications/
+	open "/Applications/$(APP_NAME).app"
+
+## Generate Xcode project via xcodegen (for IDE use)
+setup:
+	@echo "==> Checking for xcodegen..."
+	@command -v xcodegen > /dev/null 2>&1 || brew install xcodegen
+	@echo "==> Generating Xcode project..."
+	xcodegen generate
+	open NextMeeting.xcodeproj
+
+## Remove build artifacts
+clean:
+	@echo "==> Cleaning..."
+	rm -rf "$(APP)"
+	@echo "Done."

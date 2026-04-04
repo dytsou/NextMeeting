@@ -1,0 +1,42 @@
+/* Menu bar label */
+"label.in_progress" = "進行中";
+"label.no_meeting" = "沒有會議";
+
+/* Header */
+"header.title" = "今日會議";
+"header.refresh" = "重新整理";
+
+/* Tabs */
+"tab.today" = "今天";
+"tab.tomorrow" = "明天";
+
+/* Auth */
+"auth.required" = "需要行事曆存取權限";
+"auth.grant" = "授權存取";
+
+/* Empty state */
+"empty.no_meetings" = "今天沒有更多會議";
+"empty.no_meetings_tomorrow" = "明天沒有更多會議";
+
+/* Meeting row */
+"row.in_progress" = "進行中";
+"row.join_help" = "加入 %@ 會議";
+
+/* Footer */
+"footer.open_calendar" = "開啟行事曆";
+"footer.settings" = "設定";
+"footer.quit" = "結束";
+
+/* Settings */
+"settings.title" = "設定";
+"settings.back" = "返回";
+"settings.calendar_section" = "行事曆";
+"settings.fetch_title" = "手動擷取會議";
+"settings.fetch_never" = "尚未擷取";
+"settings.fetch_button" = "立即擷取";
+
+/* Join button fallback (when service is unknown) */
+"join.button" = "加入";
+
+/* Fallback */
+"event.untitled" = "無標題";

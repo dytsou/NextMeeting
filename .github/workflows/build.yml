@@ -1,0 +1,63 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read version from package.json
+        id: version
+        run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if tag already exists
+        id: tag_check
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ steps.version.outputs.value }}$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Build
+        run: make build
+
+      - name: Zip app
+        run: zip -r NextMeeting.zip NextMeeting.app
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: NextMeeting-${{ steps.version.outputs.value }}.zip
+          path: NextMeeting.zip
+
+      - name: Create tag
+        if: github.ref == 'refs/heads/main' && steps.tag_check.outputs.exists == 'false'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${{ steps.version.outputs.value }}
+          git push origin v${{ steps.version.outputs.value }}
+
+      - name: Create GitHub Release
+        if: github.ref == 'refs/heads/main' && steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.value }}
+          files: NextMeeting.zip
+          generate_release_notes: true
