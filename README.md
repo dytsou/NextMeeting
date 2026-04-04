@@ -1,8 +1,10 @@
+<p align="center">
+  <img src="./NextMeeting/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" alt="NextMeeting" width="128" height="128" />
+</p>
+
 # NextMeeting
 
 A macOS menu bar app that shows your next meeting at a glance.
-
-![NextMeeting](./NextMeeting/Assets.xcassets/AppIcon.appiconset/icon_128x128.png)
 
 ![Screenshot](./NextMeeting/screenshot.jpg)
 
