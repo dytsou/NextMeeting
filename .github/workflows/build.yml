@@ -22,6 +22,9 @@ jobs:
         id: version
         run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: Sync Info.plist marketing version from package.json
+        run: bash scripts/sync-info-plist-version.sh
+
       - name: Check if tag already exists
         id: tag_check
         run: |

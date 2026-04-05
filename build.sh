@@ -5,6 +5,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+bash scripts/sync-info-plist-version.sh
+
 APP_NAME="NextMeeting"
 BUNDLE_ID="com.nextmeeting.app"
 APP="${APP_NAME}.app"
