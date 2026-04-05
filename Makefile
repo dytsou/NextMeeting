@@ -14,12 +14,16 @@ SWIFT_SRCS := \
 	$(SRC)/MeetingMenuView.swift \
 	$(SRC)/NextMeetingApp.swift
 
-.PHONY: all build setup clean install
+.PHONY: all build sync-app-version setup clean install
 
 all: build
 
+## Sync CFBundleShortVersionString from package.json into NextMeeting/Info.plist
+sync-app-version:
+	@bash scripts/sync-info-plist-version.sh
+
 ## Build the .app bundle
-build:
+build: sync-app-version
 	@echo "==> Cleaning previous build..."
 	@rm -rf "$(APP)"
 	@echo "==> Creating .app bundle structure..."

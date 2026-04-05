@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+bash scripts/sync-info-plist-version.sh
+
 echo "==> Checking for xcodegen..."
 if ! command -v xcodegen &> /dev/null; then
     echo "==> Installing xcodegen (requires Homebrew)..."
