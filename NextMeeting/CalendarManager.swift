@@ -11,6 +11,7 @@ struct Meeting: Identifiable {
     let endDate: Date
     let meetingURL: URL?
     let notes: String?
+    let location: String?
 
     var formattedStartTime: String {
         startDate.formatted(date: .omitted, time: .shortened)
@@ -204,7 +205,8 @@ class CalendarManager: ObservableObject {
             startDate: event.startDate,
             endDate: event.endDate,
             meetingURL: extractMeetingURL(from: event),
-            notes: event.notes
+            notes: event.notes,
+            location: event.location
         )
     }
 

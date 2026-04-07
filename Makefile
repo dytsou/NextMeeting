@@ -11,6 +11,7 @@ SWIFT_SRCS := \
 	$(SRC)/CalendarSelectionStore.swift \
 	$(SRC)/CalendarManager.swift \
 	$(SRC)/JoinPreferenceStore.swift \
+	$(SRC)/AppearanceStore.swift \
 	$(SRC)/MeetingMenuView.swift \
 	$(SRC)/NextMeetingApp.swift
 
