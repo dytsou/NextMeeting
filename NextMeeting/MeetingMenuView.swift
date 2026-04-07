@@ -15,6 +15,7 @@ struct MeetingMenuView: View {
     @EnvironmentObject var manager: CalendarManager
     @EnvironmentObject var joinPreferences: JoinPreferenceStore
     @EnvironmentObject var calendarSelection: CalendarSelectionStore
+    @EnvironmentObject var appearanceStore: AppearanceStore
     @State private var selectedTab: MeetingTab = .today
     @State private var showJoinSettings = false
 
@@ -40,6 +41,7 @@ struct MeetingMenuView: View {
                 .environmentObject(joinPreferences)
                 .environmentObject(manager)
                 .environmentObject(calendarSelection)
+                .environmentObject(appearanceStore)
         }
     }
 }
@@ -160,6 +162,7 @@ private struct NoMeetingsView: View {
 
 private struct MeetingListView: View {
     let meetings: [Meeting]
+    @EnvironmentObject var appearanceStore: AppearanceStore
 
     var body: some View {
         ScrollView {
@@ -174,7 +177,7 @@ private struct MeetingListView: View {
             }
             .padding(.vertical, 4)
         }
-        .frame(maxHeight: 360)
+        .frame(maxHeight: appearanceStore.popoverListHeight)
     }
 }
 
@@ -182,15 +185,16 @@ private struct MeetingListView: View {
 
 struct MeetingRow: View {
     let meeting: Meeting
+    @EnvironmentObject var appearanceStore: AppearanceStore
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
             // Time column
             VStack(alignment: .trailing, spacing: 1) {
                 Text(meeting.formattedStartTime)
-                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .font(.system(size: max(8, appearanceStore.fontSize - 1), weight: .semibold, design: .monospaced))
                 Text(meeting.formattedEndTime)
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: max(7, appearanceStore.fontSize - 3), design: .monospaced))
                     .foregroundStyle(.secondary)
             }
             .frame(width: 50, alignment: .trailing)
@@ -200,11 +204,17 @@ struct MeetingRow: View {
                 .fill(meeting.isNow ? Color.green : Color.accentColor.opacity(0.4))
                 .frame(width: 3, height: 36)
 
-            // Title
+            // Title + location
             VStack(alignment: .leading, spacing: 3) {
                 Text(meeting.title)
-                    .font(.system(size: 13))
+                    .font(.system(size: appearanceStore.fontSize))
                     .lineLimit(2)
+                if let location = meeting.location, !location.isEmpty {
+                    Text(location)
+                        .font(.system(size: max(8, appearanceStore.fontSize - 2)))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()
@@ -393,6 +403,7 @@ private struct CalendarBulkTriStateCheckbox: NSViewRepresentable {
 private enum SettingsSheetTab: Hashable {
     case meetingLinks
     case calendarSources
+    case appearance
 }
 
 /// Same vibrancy material as `NSPopover` content (SwiftUI `Material` has no `.popover` on macOS).
@@ -412,6 +423,7 @@ private struct JoinSettingsView: View {
     @EnvironmentObject private var joinPreferences: JoinPreferenceStore
     @EnvironmentObject private var manager: CalendarManager
     @EnvironmentObject private var calendarSelection: CalendarSelectionStore
+    @EnvironmentObject private var appearanceStore: AppearanceStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedTab: SettingsSheetTab = .meetingLinks
@@ -434,6 +446,7 @@ private struct JoinSettingsView: View {
             Picker("", selection: $selectedTab) {
                 Text("settings.tab.meeting_links").tag(SettingsSheetTab.meetingLinks)
                 Text("settings.tab.calendar_sources").tag(SettingsSheetTab.calendarSources)
+                Text("settings.tab.appearance").tag(SettingsSheetTab.appearance)
             }
             .labelsHidden()
             .pickerStyle(.segmented)
@@ -448,11 +461,13 @@ private struct JoinSettingsView: View {
                     meetingLinksPane
                 case .calendarSources:
                     CalendarSourcesSettingsPane()
+                case .appearance:
+                    AppearanceSettingsPane()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 380, height: 420)
+        .frame(width: 380, height: 320)
         .padding(.bottom, 8)
         .background {
             PopoverMaterialBackgroundView()
@@ -573,6 +588,245 @@ private struct CalendarSourcesSettingsPane: View {
         return Circle()
             .fill(Color(nsColor: color))
             .frame(width: 10, height: 10)
+    }
+}
+
+// MARK: - Appearance Settings Pane
+
+private enum AppearancePreviewFocus {
+    case menuBar
+    case listRow
+}
+
+private struct AppearanceSettingsPane: View {
+    @EnvironmentObject private var appearanceStore: AppearanceStore
+    @State private var showFloatingPreview = false
+    @State private var previewFocus: AppearancePreviewFocus = .menuBar
+    @State private var hidePreviewWorkItem: DispatchWorkItem?
+    @State private var isAdjustingControl = false
+    @State private var isOptionPressed = false
+    @State private var localFlagsMonitor: Any?
+    @State private var globalFlagsMonitor: Any?
+
+    private func updateOptionPressed(from flags: NSEvent.ModifierFlags) {
+        let pressed = flags.contains(.option)
+        let wasPressed = isOptionPressed
+        isOptionPressed = pressed
+
+        if wasPressed && !pressed && !isAdjustingControl {
+            schedulePreviewHide(after: 0.6)
+        }
+    }
+
+    private func showPreview(focus: AppearancePreviewFocus) {
+        previewFocus = focus
+        hidePreviewWorkItem?.cancel()
+        showFloatingPreview = true
+    }
+
+    private func schedulePreviewHide(after seconds: Double = 1.0) {
+        guard !isOptionPressed && !isAdjustingControl else { return }
+        hidePreviewWorkItem?.cancel()
+        let workItem = DispatchWorkItem {
+            showFloatingPreview = false
+        }
+        hidePreviewWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: workItem)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    Text("settings.appearance.font_size")
+                    Spacer()
+                    Slider(
+                        value: Binding(
+                            get: { appearanceStore.fontSize },
+                            set: {
+                                appearanceStore.fontSize = $0
+                                showPreview(focus: .listRow)
+                            }
+                        ),
+                        in: 10...18, step: 0.5,
+                        onEditingChanged: { isEditing in
+                            isAdjustingControl = isEditing
+                            if isEditing {
+                                showPreview(focus: .listRow)
+                            } else {
+                                schedulePreviewHide()
+                            }
+                        }
+                    )
+                    .frame(width: 110)
+                    Text("\(String(format: "%.1f", appearanceStore.fontSize))pt")
+                        .frame(width: 44, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack {
+                    Text("settings.appearance.menu_bar_title_font_size")
+                    Spacer()
+                    Slider(
+                        value: Binding(
+                            get: { appearanceStore.menuBarTitleFontSize },
+                            set: {
+                                appearanceStore.menuBarTitleFontSize = $0
+                                showPreview(focus: .menuBar)
+                            }
+                        ),
+                        in: 8...18, step: 0.5,
+                        onEditingChanged: { isEditing in
+                            isAdjustingControl = isEditing
+                            if isEditing {
+                                showPreview(focus: .menuBar)
+                            } else {
+                                schedulePreviewHide()
+                            }
+                        }
+                    )
+                    .frame(width: 110)
+                    Text("\(String(format: "%.1f", appearanceStore.menuBarTitleFontSize))pt")
+                        .frame(width: 44, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack {
+                    Text("settings.appearance.menu_bar_time_font_size")
+                    Spacer()
+                    Slider(
+                        value: Binding(
+                            get: { appearanceStore.menuBarTimeFontSize },
+                            set: {
+                                appearanceStore.menuBarTimeFontSize = $0
+                                showPreview(focus: .menuBar)
+                            }
+                        ),
+                        in: 5...12, step: 0.5,
+                        onEditingChanged: { isEditing in
+                            isAdjustingControl = isEditing
+                            if isEditing {
+                                showPreview(focus: .menuBar)
+                            } else {
+                                schedulePreviewHide()
+                            }
+                        }
+                    )
+                    .frame(width: 110)
+                    Text("\(String(format: "%.1f", appearanceStore.menuBarTimeFontSize))pt")
+                        .frame(width: 44, alignment: .trailing)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack {
+                    Text("settings.appearance.menu_bar_length")
+                    Spacer()
+                    Stepper(
+                        value: Binding(
+                            get: { appearanceStore.menuBarTitleLength },
+                            set: {
+                                appearanceStore.menuBarTitleLength = $0
+                                showPreview(focus: .menuBar)
+                                schedulePreviewHide(after: 1.2)
+                            }
+                        ),
+                        in: 5...30
+                    ) {
+                        Text("\(appearanceStore.menuBarTitleLength)")
+                            .frame(width: 28, alignment: .trailing)
+                    }
+                }
+            } header: {
+                Text("settings.appearance.section")
+            }
+        }
+        .formStyle(.grouped)
+        .popover(isPresented: $showFloatingPreview, arrowEdge: .trailing) {
+            AppearancePreviewCard(focus: previewFocus)
+                .padding(12)
+                .frame(width: 280)
+        }
+        .onAppear {
+            localFlagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
+                updateOptionPressed(from: event.modifierFlags)
+                return event
+            }
+            globalFlagsMonitor = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
+                updateOptionPressed(from: event.modifierFlags)
+            }
+        }
+        .onDisappear {
+            hidePreviewWorkItem?.cancel()
+            hidePreviewWorkItem = nil
+            if let localFlagsMonitor {
+                NSEvent.removeMonitor(localFlagsMonitor)
+                self.localFlagsMonitor = nil
+            }
+            if let globalFlagsMonitor {
+                NSEvent.removeMonitor(globalFlagsMonitor)
+                self.globalFlagsMonitor = nil
+            }
+        }
+    }
+}
+
+private struct AppearancePreviewCard: View {
+    @EnvironmentObject private var appearanceStore: AppearanceStore
+    let focus: AppearancePreviewFocus
+
+    private var previewTitle: String {
+        let raw = NSLocalizedString("settings.appearance.preview_title", comment: "")
+        return String(raw.prefix(appearanceStore.menuBarTitleLength))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if focus == .menuBar {
+                Text("settings.appearance.preview_menu_bar")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack(alignment: .center, spacing: 8) {
+                    Image(systemName: "calendar")
+                        .foregroundStyle(.secondary)
+
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(NSLocalizedString("settings.appearance.preview_time", comment: ""))
+                            .font(.system(size: appearanceStore.menuBarTimeFontSize, weight: .regular))
+                        Text(previewTitle)
+                            .font(.system(size: appearanceStore.menuBarTitleFontSize, weight: .semibold))
+                            .lineLimit(1)
+                    }
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            if focus == .listRow {
+                Text("settings.appearance.preview_list_row")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("settings.appearance.preview_meeting")
+                        .font(.system(size: appearanceStore.fontSize))
+                        .lineLimit(2)
+                    Text("settings.appearance.preview_location")
+                        .font(.system(size: max(8, appearanceStore.fontSize - 2)))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.secondary.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .padding(.vertical, 2)
     }
 }
 

@@ -52,6 +52,21 @@
 "settings.join.whereby" = "Whereby";
 "settings.join.other" = "Other links";
 
+/* Appearance settings */
+"settings.tab.appearance" = "Appearance";
+"settings.appearance.section" = "Display";
+"settings.appearance.font_size" = "List font size";
+"settings.appearance.menu_bar_title_font_size" = "Menu bar title font";
+"settings.appearance.menu_bar_time_font_size" = "Menu bar time font";
+"settings.appearance.menu_bar_length" = "Menu bar title length";
+"settings.appearance.preview_section" = "Preview";
+"settings.appearance.preview_menu_bar" = "Menu bar preview";
+"settings.appearance.preview_list_row" = "Meeting row preview";
+"settings.appearance.preview_time" = "10:30 - 11:00";
+"settings.appearance.preview_title" = "Design Sync";
+"settings.appearance.preview_meeting" = "Product Planning Meeting";
+"settings.appearance.preview_location" = "Conference Room A";
+
 /* Join button fallback (when service is unknown) */
 "join.button" = "Join";
 

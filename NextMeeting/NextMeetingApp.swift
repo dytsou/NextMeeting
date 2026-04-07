@@ -26,7 +26,10 @@ class StatusBarController: NSObject {
     private var popover: NSPopover
     private let joinPreferenceStore = JoinPreferenceStore()
     private let calendarSelectionStore: CalendarSelectionStore
+    private let appearanceStore = AppearanceStore()
+    private var currentMeeting: Meeting?
     private var cancellable: AnyCancellable?
+    private var appearanceCancellable: AnyCancellable?
     private var sizeObservation: NSKeyValueObservation?
     private var dismissPopoverObserver: NSObjectProtocol?
 
@@ -40,6 +43,7 @@ class StatusBarController: NSObject {
                 .environmentObject(manager)
                 .environmentObject(joinPreferenceStore)
                 .environmentObject(calendarSelectionStore)
+                .environmentObject(appearanceStore)
         )
         hostingController.sizingOptions = .preferredContentSize
         popover.contentViewController = hostingController
@@ -65,7 +69,18 @@ class StatusBarController: NSObject {
 
         cancellable = manager.$nextMeeting
             .receive(on: RunLoop.main)
-            .sink { [weak self] meeting in self?.update(meeting: meeting) }
+            .sink { [weak self] meeting in
+                self?.currentMeeting = meeting
+                self?.update(meeting: meeting)
+            }
+
+        appearanceCancellable = appearanceStore.objectWillChange
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    self?.update(meeting: self?.currentMeeting)
+                }
+            }
 
         dismissPopoverObserver = NotificationCenter.default.addObserver(
             forName: .nextMeetingDismissPopover,
@@ -118,7 +133,7 @@ class StatusBarController: NSObject {
             return
         }
 
-        let title = String(meeting.title.prefix(10))
+        let title = String(meeting.title.prefix(appearanceStore.menuBarTitleLength))
         let time =
             meeting.formattedEndTime.isEmpty
             ? "\(meeting.formattedStartTime)"
@@ -127,13 +142,13 @@ class StatusBarController: NSObject {
         let str = NSMutableAttributedString(
             string: time + "\n",
             attributes: [
-                .font: NSFont.systemFont(ofSize: 6, weight: .regular),
+                .font: NSFont.systemFont(ofSize: appearanceStore.menuBarTimeFontSize, weight: .regular),
                 .foregroundColor: NSColor.labelColor
             ]
         )
         str.append(NSAttributedString(
             string: title,
-            attributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold)]
+            attributes: [.font: NSFont.systemFont(ofSize: appearanceStore.menuBarTitleFontSize, weight: .semibold)]
         ))
         button.attributedTitle = str
     }
