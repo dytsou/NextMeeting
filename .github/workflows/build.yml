@@ -23,13 +23,15 @@ jobs:
         run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Sync Info.plist version from package.json
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: sync-info-plist-version
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
+          echo "changed=true" >> $GITHUB_OUTPUT
 
       - name: Commit synced Info.plist to repository
-        # Only pushes to main (not pull_request); PR jobs still sync plist locally for the build
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: steps.sync-info-plist-version.outputs.changed == 'true'
         run: |
           git config user.name "dytsou"
           git config user.email "dytsou@gmail.com"
