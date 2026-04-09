@@ -1,6 +1,17 @@
 {
   "name": "next-meeting",
   "version": "1.2.1",
+  "description": "NextMeeting is a macOS app that helps you manage your meetings and stay on top of your schedule.",
+  "homepage": "https://github.com/dytsou/NextMeeting",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dytsou/NextMeeting.git"
+  },
+  "author": {
+    "name": "dytsou",
+    "email": "dytsou@gmail.com",
+    "url": "https://github.com/dytsou"
+  },
   "license": "MIT",
   "devDependencies": {
     "@semantic-release/commit-analyzer": "^13.0.0",
