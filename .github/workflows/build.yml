@@ -22,8 +22,22 @@ jobs:
         id: version
         run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
-      - name: Sync Info.plist marketing version from package.json
-        run: bash scripts/sync-info-plist-version.sh
+      - name: Sync Info.plist version from package.json
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
+
+      - name: Commit synced Info.plist to repository
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "dytsou"
+          git config user.email "dytsou@gmail.com"
+          git add NextMeeting/Info.plist
+          if git diff --staged --quiet; then
+            echo "Info.plist already matches package.json; nothing to commit."
+          else
+            git commit -m "chore: sync Info.plist CFBundleShortVersionString with package.json"
+            git push
+          fi
 
       - name: Check if tag already exists
         id: tag_check
