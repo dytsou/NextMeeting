@@ -133,7 +133,7 @@ class StatusBarController: NSObject {
             return
         }
 
-        let title = String(meeting.title.prefix(appearanceStore.menuBarTitleLength))
+        let title = meeting.title.prefix(halfwidthUnits: appearanceStore.menuBarTitleLength)
         let time =
             meeting.formattedEndTime.isEmpty
             ? "\(meeting.formattedStartTime)"

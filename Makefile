@@ -13,13 +13,14 @@ SWIFT_SRCS := \
 	$(SRC)/JoinPreferenceStore.swift \
 	$(SRC)/AppearanceStore.swift \
 	$(SRC)/MeetingMenuView.swift \
-	$(SRC)/NextMeetingApp.swift
+	$(SRC)/NextMeetingApp.swift \
+	$(SRC)/String+HalfwidthPrefix.swift
 
 .PHONY: all build sync-app-version setup clean install
 
 all: build
 
-## Sync CFBundleShortVersionString from package.json into NextMeeting/Info.plist
+## Sync CFBundleShortVersionString and CFBundleVersion from package.json into NextMeeting/Info.plist
 sync-app-version:
 	@bash scripts/sync-info-plist-version.sh
 
