@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref || github.ref }}
 
       - name: Read version from package.json
         id: version
@@ -28,7 +29,8 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
 
       - name: Commit synced Info.plist to repository
-        if: github.ref == 'refs/heads/main'
+        # main push: always. PR: only same-repo (fork PRs cannot push from GITHUB_TOKEN)
+        if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
         run: |
           git config user.name "dytsou"
           git config user.email "dytsou@gmail.com"
