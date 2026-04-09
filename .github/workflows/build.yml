@@ -23,25 +23,25 @@ jobs:
         run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
       - name: Sync Info.plist version from package.json
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         id: sync-info-plist-version
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
-          echo "changed=true" >> $GITHUB_OUTPUT
+          # Use git diff inside `if` so a non-zero exit (file changed) does not fail the step under bash -e
+          if git diff --quiet NextMeeting/Info.plist; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Commit synced Info.plist to repository
-        if: steps.sync-info-plist-version.outputs.changed == 'true'
+      - name: Amend HEAD with synced Info.plist
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.sync-info-plist-version.outputs.changed == 'true'
         run: |
           git config user.name "dytsou"
           git config user.email "dytsou@gmail.com"
           git add NextMeeting/Info.plist
-          if git diff --staged --quiet; then
-            echo "Info.plist already matches package.json; nothing to commit."
-          else
-            git commit --amend --no-edit
-            git push --force-with-lease
-          fi
+          git commit --amend --no-edit
+          git push --force-with-lease origin "HEAD:${{ github.ref_name }}"
 
       - name: Check if tag already exists
         id: tag_check
