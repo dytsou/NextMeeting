@@ -776,7 +776,7 @@ private struct AppearancePreviewCard: View {
 
     private var previewTitle: String {
         let raw = NSLocalizedString("settings.appearance.preview_title", comment: "")
-        return String(raw.prefix(appearanceStore.menuBarTitleLength))
+        return raw.prefix(halfwidthUnits: appearanceStore.menuBarTitleLength)
     }
 
     var body: some View {

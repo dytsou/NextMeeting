@@ -13,7 +13,8 @@ SWIFT_SRCS := \
 	$(SRC)/JoinPreferenceStore.swift \
 	$(SRC)/AppearanceStore.swift \
 	$(SRC)/MeetingMenuView.swift \
-	$(SRC)/NextMeetingApp.swift
+	$(SRC)/NextMeetingApp.swift \
+	$(SRC)/String+HalfwidthPrefix.swift
 
 .PHONY: all build sync-app-version setup clean install
 
