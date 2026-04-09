@@ -25,6 +25,7 @@ jobs:
       - name: Sync Info.plist version from package.json
         run: |
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" NextMeeting/Info.plist
 
       - name: Commit synced Info.plist to repository
         if: github.ref == 'refs/heads/main'
@@ -35,7 +36,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "Info.plist already matches package.json; nothing to commit."
           else
-            git commit -m "chore: sync Info.plist CFBundleShortVersionString with package.json"
+            git commit -m "chore: sync Info.plist version keys with package.json"
             git push
           fi
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Set CFBundleShortVersionString in NextMeeting/Info.plist from package.json (single source of truth).
+# Set CFBundleShortVersionString and CFBundleVersion in NextMeeting/Info.plist from package.json (single source of truth).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -21,4 +21,5 @@ else
 fi
 
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${VERSION}" "$PLIST"
-echo "sync-info-plist-version: CFBundleShortVersionString -> ${VERSION}"
+/usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${VERSION}" "$PLIST"
+echo "sync-info-plist-version: CFBundleShortVersionString & CFBundleVersion -> ${VERSION}"

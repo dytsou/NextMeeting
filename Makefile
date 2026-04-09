@@ -20,7 +20,7 @@ SWIFT_SRCS := \
 
 all: build
 
-## Sync CFBundleShortVersionString from package.json into NextMeeting/Info.plist
+## Sync CFBundleShortVersionString and CFBundleVersion from package.json into NextMeeting/Info.plist
 sync-app-version:
 	@bash scripts/sync-info-plist-version.sh
 
