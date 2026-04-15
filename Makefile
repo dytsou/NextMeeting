@@ -13,12 +13,13 @@ SWIFT_SRCS := \
 	$(SRC)/CalendarManager.swift \
 	$(SRC)/JoinPreferenceStore.swift \
 	$(SRC)/AppearanceStore.swift \
+	$(SRC)/AppDebug.swift \
 	$(SRC)/MeetingMenuView.swift \
 	$(SRC)/NextMeetingApp.swift \
 	$(SRC)/String+HalfwidthPrefix.swift \
 	$(SRC)/UpdateChecker.swift
 
-.PHONY: all build sync-app-version normalize-entitlements setup clean install
+.PHONY: all build sync-app-version setup clean install
 
 all: build
 
@@ -26,12 +27,8 @@ all: build
 sync-app-version:
 	@bash scripts/sync-info-plist-version.sh
 
-## Normalize entitlements plist (codesign is picky about formatting)
-normalize-entitlements:
-	@plutil -convert xml1 "$(SRC)/NextMeeting.entitlements"
-
 ## Build the .app bundle
-build: sync-app-version normalize-entitlements
+build: sync-app-version
 	@echo "==> Cleaning previous build..."
 	@rm -rf "$(APP)"
 	@echo "==> Creating .app bundle structure..."
@@ -72,9 +69,10 @@ build: sync-app-version normalize-entitlements
 		echo "Warning: missing $$ASSET — restore NextMeeting/Assets.xcassets/AppIcon.appiconset from the repo."; \
 	fi
 	@echo "==> Signing (ad-hoc)..."
-	@codesign --force --deep --sign - \
-		--entitlements "$(SRC)/NextMeeting.entitlements" \
-		"$(APP)"
+	@tmp=$$(mktemp); \
+	plutil -convert xml1 -o "$$tmp" "$(SRC)/NextMeeting.entitlements"; \
+	codesign --force --deep --sign - --entitlements "$$tmp" "$(APP)"; \
+	rm -f "$$tmp"
 	@echo ""
 	@echo "Build complete: ./$(APP)"
 

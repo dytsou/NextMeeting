@@ -31,14 +31,12 @@ echo "==> Compiling Swift sources..."
 SDK=$(xcrun --show-sdk-path --sdk macosx)
 ARCH=$(uname -m)
 
-# codesign is picky about entitlements formatting on some systems
-plutil -convert xml1 "$SRC/NextMeeting.entitlements" >/dev/null 2>&1 || true
-
 SWIFT_SRCS=(
     "$SRC/CalendarSelectionStore.swift"
     "$SRC/CalendarManager.swift"
     "$SRC/JoinPreferenceStore.swift"
     "$SRC/AppearanceStore.swift"
+    "$SRC/AppDebug.swift"
     "$SRC/String+HalfwidthPrefix.swift"
     "$SRC/MeetingMenuView.swift"
     "$SRC/NextMeetingApp.swift"
@@ -93,9 +91,13 @@ else
 fi
 
 echo "==> Signing (ad-hoc)..."
-codesign --force --deep --sign - \
-    --entitlements "$SRC/NextMeeting.entitlements" \
-    "$APP"
+ENT_TMP="$(mktemp)"
+if plutil -convert xml1 -o "$ENT_TMP" "$SRC/NextMeeting.entitlements" >/dev/null 2>&1; then
+	codesign --force --deep --sign - --entitlements "$ENT_TMP" "$APP"
+else
+	codesign --force --deep --sign - --entitlements "$SRC/NextMeeting.entitlements" "$APP"
+fi
+rm -f "$ENT_TMP"
 
 echo ""
 echo "Build complete: ./$APP"

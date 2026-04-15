@@ -1,4 +1,3 @@
-import AppKit
 import Foundation
 
 private enum UpdateDefaultsKeys {
@@ -22,21 +21,29 @@ final class UpdateChecker: ObservableObject {
     @Published private(set) var availableVersion: String?
     @Published private(set) var availableDownloadURL: URL?
 
-    init(loadFromDefaults: Bool = true) {
-        if loadFromDefaults {
-            self.availableVersion = defaults.string(forKey: UpdateDefaultsKeys.availableVersion)
-            if let raw = defaults.string(forKey: UpdateDefaultsKeys.availableDownloadURL) {
-                self.availableDownloadURL = URL(string: raw)
-            } else {
-                self.availableDownloadURL = nil
-            }
-        } else {
+    init() {
+        let shouldAllowDevOverrides = AppDebug.isEnabled
+
+        // In normal mode, don't load/persist the "update available" UI state.
+        // This prevents stale buttons from sticking around across launches.
+        if !shouldAllowDevOverrides {
+            defaults.removeObject(forKey: UpdateDefaultsKeys.availableVersion)
+            defaults.removeObject(forKey: UpdateDefaultsKeys.availableDownloadURL)
             self.availableVersion = nil
+            self.availableDownloadURL = nil
+            return
+        }
+
+        self.availableVersion = defaults.string(forKey: UpdateDefaultsKeys.availableVersion)
+        if let raw = defaults.string(forKey: UpdateDefaultsKeys.availableDownloadURL) {
+            self.availableDownloadURL = URL(string: raw)
+        } else {
             self.availableDownloadURL = nil
         }
     }
 
     func start() {
+        applyDevOverridesIfNeeded()
         Task { [weak self] in
             await self?.checkIfNeeded()
             await self?.scheduleNextDailyCheck()
@@ -44,6 +51,7 @@ final class UpdateChecker: ObservableObject {
     }
 
     func checkIfNeeded() async {
+        applyDevOverridesIfNeeded()
         if let last = defaults.object(forKey: UpdateDefaultsKeys.lastUpdateCheckDate) as? Date,
            Calendar.current.isDateInToday(last) {
             return
@@ -82,7 +90,12 @@ final class UpdateChecker: ObservableObject {
             let latestTag = latest.tag_name.trimmingCharacters(in: .whitespacesAndNewlines)
             guard let latestVersion = SemVer(latestTag) else { return }
 
-            guard latestVersion > currentVersion else { return }
+            guard latestVersion > currentVersion else {
+                if !AppDebug.isEnabled {
+                    clearAvailableUpdate()
+                }
+                return
+            }
 
             let downloadURL = URL(string: latest.html_url) ?? URL(string: "https://github.com/dytsou/NextMeeting/releases/latest")!
             setAvailableUpdate(version: latestVersion.stringValue, downloadURL: downloadURL)
@@ -96,6 +109,20 @@ final class UpdateChecker: ObservableObject {
         defaults.set(downloadURL.absoluteString, forKey: UpdateDefaultsKeys.availableDownloadURL)
         availableVersion = version
         availableDownloadURL = downloadURL
+    }
+
+    private func clearAvailableUpdate() {
+        defaults.removeObject(forKey: UpdateDefaultsKeys.availableVersion)
+        defaults.removeObject(forKey: UpdateDefaultsKeys.availableDownloadURL)
+        availableVersion = nil
+        availableDownloadURL = nil
+    }
+
+    private func applyDevOverridesIfNeeded() {
+        guard AppDebug.isEnabled else { return }
+        AppDebug.log("Forcing update link (DEV) regardless of latest release.")
+        let url = URL(string: "https://github.com/dytsou/NextMeeting/releases/latest")!
+        setAvailableUpdate(version: "DEV", downloadURL: url)
     }
 
     private static func nextNineAM(after date: Date) -> Date? {
