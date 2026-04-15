@@ -837,8 +837,26 @@ private enum FooterLinks {
 }
 
 private struct FooterView: View {
+    @EnvironmentObject private var updateChecker: UpdateChecker
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
+            if let url = updateChecker.availableDownloadURL, let version = updateChecker.availableVersion {
+                Button {
+                    NotificationCenter.default.post(name: .nextMeetingDismissPopover, object: nil)
+                    _ = NSWorkspace.shared.open(url)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text(String(format: NSLocalizedString("Update available (%@)", comment: ""), version))
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.accentColor)
+                .padding(.bottom, 2)
+            }
+
             HStack {
                 Button("footer.open_calendar") {
                     NSWorkspace.shared.open(URL(fileURLWithPath: "/System/Applications/Calendar.app"))
