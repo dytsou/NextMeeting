@@ -35,8 +35,12 @@ SWIFT_SRCS=(
     "$SRC/CalendarSelectionStore.swift"
     "$SRC/CalendarManager.swift"
     "$SRC/JoinPreferenceStore.swift"
+    "$SRC/AppearanceStore.swift"
+    "$SRC/AppDebug.swift"
+    "$SRC/String+HalfwidthPrefix.swift"
     "$SRC/MeetingMenuView.swift"
     "$SRC/NextMeetingApp.swift"
+    "$SRC/UpdateChecker.swift"
 )
 for f in "${SWIFT_SRCS[@]}"; do
     if [[ ! -f "$f" ]]; then
@@ -78,16 +82,22 @@ if [[ -f "$ASSET/Contents.json" ]]; then
 	WORK=$(mktemp -d)
 	mkdir -p "$WORK/AppIcon.iconset"
 	cp "$ASSET"/icon_*.png "$WORK/AppIcon.iconset/"
-	iconutil -c icns "$WORK/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"
+	if ! iconutil -c icns "$WORK/AppIcon.iconset" -o "$APP/Contents/Resources/AppIcon.icns"; then
+		echo "Warning: failed to pack AppIcon.icns (iconutil). Continuing without custom icon."
+	fi
 	rm -rf "$WORK"
 else
 	echo "Warning: missing $ASSET — restore NextMeeting/Assets.xcassets/AppIcon.appiconset from the repo."
 fi
 
 echo "==> Signing (ad-hoc)..."
-codesign --force --deep --sign - \
-    --entitlements "$SRC/NextMeeting.entitlements" \
-    "$APP"
+ENT_TMP="$(mktemp)"
+if plutil -convert xml1 -o "$ENT_TMP" "$SRC/NextMeeting.entitlements" >/dev/null 2>&1; then
+	codesign --force --deep --sign - --entitlements "$ENT_TMP" "$APP"
+else
+	codesign --force --deep --sign - --entitlements "$SRC/NextMeeting.entitlements" "$APP"
+fi
+rm -f "$ENT_TMP"
 
 echo ""
 echo "Build complete: ./$APP"

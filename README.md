@@ -23,6 +23,7 @@ A macOS menu bar app that shows your next meeting at a glance.
 - One-click join button for detected meeting links; **Settings** sets **App** vs **browser** per provider (Zoom, Google Meet, Teams, Webex, Whereby)
 - **Calendar selection:** in **Settings**, use the **Calendars** tab to limit which Apple Calendar sources are read
 - Refreshes every 60 seconds and on calendar changes
+- Daily update check (GitHub Releases) with in-app update link
 - Supports English and Traditional Chinese (follows system language)
 
 ## Requirements

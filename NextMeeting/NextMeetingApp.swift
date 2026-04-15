@@ -27,11 +27,13 @@ class StatusBarController: NSObject {
     private let joinPreferenceStore = JoinPreferenceStore()
     private let calendarSelectionStore: CalendarSelectionStore
     private let appearanceStore = AppearanceStore()
+    private let updateChecker = UpdateChecker()
     private var currentMeeting: Meeting?
     private var cancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     private var sizeObservation: NSKeyValueObservation?
     private var dismissPopoverObserver: NSObjectProtocol?
+    private var wakeObserver: NSObjectProtocol?
 
     init(manager: CalendarManager, calendarSelection: CalendarSelectionStore) {
         calendarSelectionStore = calendarSelection
@@ -44,6 +46,7 @@ class StatusBarController: NSObject {
                 .environmentObject(joinPreferenceStore)
                 .environmentObject(calendarSelectionStore)
                 .environmentObject(appearanceStore)
+                .environmentObject(updateChecker)
         )
         hostingController.sizingOptions = .preferredContentSize
         popover.contentViewController = hostingController
@@ -92,11 +95,27 @@ class StatusBarController: NSObject {
                 self.popover.performClose(nil)
             }
         }
+
+        wakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                await self.updateChecker.checkIfNeeded()
+            }
+        }
+
+        updateChecker.start()
     }
 
     deinit {
         if let dismissPopoverObserver {
             NotificationCenter.default.removeObserver(dismissPopoverObserver)
+        }
+        if let wakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
         }
     }
 
