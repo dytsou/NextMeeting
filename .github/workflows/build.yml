@@ -2,9 +2,9 @@ name: Build & Release
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   pull_request:
-    branches: [main]
+    branches: [ main ]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -23,21 +23,25 @@ jobs:
           persist-credentials: false
 
       - name: Setup SSH deploy key
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Trust GitHub host key
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
       - name: Use SSH for pushes
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: git remote set-url origin "git@github.com:${{ github.repository }}.git"
 
       - name: Read version from package.json
         id: version
-        run: echo "value=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "value=$(node -p "require('./package.json').version")" >>
+          $GITHUB_OUTPUT
 
       - name: Sync Info.plist version from package.json
         id: sync-info-plist-version
@@ -52,7 +56,8 @@ jobs:
           fi
 
       - name: Amend HEAD with synced Info.plist
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.sync-info-plist-version.outputs.changed == 'true'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          steps.sync-info-plist-version.outputs.changed == 'true'
         run: |
           git config user.name "dytsou"
           git config user.email "dytsou@gmail.com"
