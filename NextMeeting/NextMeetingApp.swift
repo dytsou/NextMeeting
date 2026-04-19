@@ -117,6 +117,9 @@ class StatusBarController: NSObject {
         if let wakeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
         }
+        sizeObservation?.invalidate()
+        cancellable?.cancel()
+        appearanceCancellable?.cancel()
     }
 
     @objc private func togglePopover() {
