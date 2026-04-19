@@ -39,7 +39,16 @@ A macOS menu bar app that shows your next meeting at a glance.
 
 Open **Calendar.app** → Preferences → Accounts → add your Google account. NextMeeting reads events directly from the system calendar — no API keys or OAuth required.
 
-### 2. Build and install
+### 2. Install with Homebrew
+
+Install the [Homebrew tap](https://github.com/dytsou/homebrew-nextmeeting) (GUI app via Cask):
+
+```bash
+brew tap dytsou/nextmeeting
+brew install --cask nextmeeting
+```
+
+If not using Homebrew, build the app manually.
 
 **Option A — Command Line Tools only** (no full Xcode app):
 
