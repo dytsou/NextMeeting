@@ -22,11 +22,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Setup SSH deploy key
+      # GitHub allows one deploy key per repo — use DEPLOY_KEY on NextMeeting, TAP_DEPLOY_KEY on homebrew-nextmeeting.
+      - name: Setup SSH deploy keys
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: webfactory/ssh-agent@v0.10.0
         with:
-          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
+          ssh-private-key: |
+            ${{ secrets.DEPLOY_KEY }}
+            ${{ secrets.TAP_DEPLOY_KEY }}
 
       - name: Trust GitHub host key
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -83,6 +86,11 @@ jobs:
       - name: Zip app
         run: zip -r NextMeeting.zip NextMeeting.app
 
+      - name: SHA256 of NextMeeting.zip
+        id: artifact
+        run: echo "sha256=$(shasum -a 256 NextMeeting.zip | awk '{print $1}')" >>
+          $GITHUB_OUTPUT
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v7
         with:
@@ -104,3 +112,27 @@ jobs:
           tag_name: v${{ steps.version.outputs.value }}
           files: NextMeeting.zip
           generate_release_notes: true
+
+      # Uses TAP_DEPLOY_KEY (separate key; add its public key to homebrew-nextmeeting Deploy keys with write access).
+      - name: Update Homebrew tap cask
+        if: github.ref == 'refs/heads/main' && steps.tag_check.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          SHA256: ${{ steps.artifact.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          tmp=$(mktemp -d)
+          git clone --depth 1 git@github.com:dytsou/homebrew-nextmeeting.git "$tmp/tap"
+          cask="$tmp/tap/Casks/nextmeeting.rb"
+          perl -pi -e 's/^  version ".*"/  version "$ENV{VERSION}"/' "$cask"
+          perl -pi -e 's/^  sha256 ".*"/  sha256 "$ENV{SHA256}"/' "$cask"
+          cd "$tmp/tap"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/nextmeeting.rb
+          if git diff --staged --quiet; then
+            echo "No cask file changes; skipping commit."
+            exit 0
+          fi
+          git commit -m "chore: bump NextMeeting cask to ${VERSION}"
+          git push origin HEAD:main
