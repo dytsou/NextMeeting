@@ -10,7 +10,6 @@ struct Meeting: Identifiable {
     let startDate: Date
     let endDate: Date
     let meetingURL: URL?
-    let notes: String?
     let location: String?
 
     var formattedStartTime: String {
@@ -68,6 +67,8 @@ class CalendarManager: ObservableObject {
     private var timer: Timer?
     private var notificationObserver: NSObjectProtocol?
     private var selectionCancellable: AnyCancellable?
+    private var fetchTask: Task<Void, Never>?
+    private var lastFetchAt: Date?
 
     init(calendarSelection: CalendarSelectionStore) {
         self.calendarSelection = calendarSelection
@@ -76,12 +77,13 @@ class CalendarManager: ObservableObject {
         selectionCancellable = calendarSelection.objectWillChange
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.fetchMeetings()
+                self?.requestFetch(debounceSeconds: 0.25)
             }
     }
 
     deinit {
         timer?.invalidate()
+        fetchTask?.cancel()
         selectionCancellable?.cancel()
         if let observer = notificationObserver {
             NotificationCenter.default.removeObserver(observer)
@@ -147,22 +149,43 @@ class CalendarManager: ObservableObject {
             queue: .main
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.fetchMeetings()
+                self?.requestFetch(debounceSeconds: 0.25)
             }
         }
     }
 
     private func startRefreshing() {
-        fetchMeetings()
+        requestFetch(debounceSeconds: 0)
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.fetchMeetings()
+                self?.requestFetch(debounceSeconds: 0.1)
             }
         }
     }
 
     func fetchMeetings() {
+        requestFetch(debounceSeconds: 0)
+    }
+
+    private func requestFetch(debounceSeconds: TimeInterval) {
+        fetchTask?.cancel()
+        fetchTask = Task { @MainActor in
+            if debounceSeconds > 0 {
+                let ns = UInt64(debounceSeconds * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: ns)
+            }
+
+            // Coalesce accidental back-to-back triggers (timer tick + EKEventStoreChanged, etc).
+            if let lastFetchAt, Date().timeIntervalSince(lastFetchAt) < 0.05 {
+                return
+            }
+            lastFetchAt = Date()
+            performFetchMeetings()
+        }
+    }
+
+    private func performFetchMeetings() {
         let now = Date()
         let calendar = Calendar.current
 
@@ -205,7 +228,6 @@ class CalendarManager: ObservableObject {
             startDate: event.startDate,
             endDate: event.endDate,
             meetingURL: extractMeetingURL(from: event),
-            notes: event.notes,
             location: event.location
         )
     }
@@ -222,6 +244,13 @@ class CalendarManager: ObservableObject {
         "webex.com/join/",
         "whereby.com/",
     ]
+
+    // Shared detector to avoid per-event allocations during refresh.
+    private static let linkDetector: NSDataDetector? = {
+        try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    }()
+
+    private static let maxScannedTextLength = 20_000
 
     private func extractMeetingURL(from event: EKEvent) -> URL? {
         // 1. Check event.url directly
@@ -240,11 +269,24 @@ class CalendarManager: ObservableObject {
     }
 
     private func extractURL(from text: String) -> URL? {
-        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else {
+        guard let detector = Self.linkDetector else {
             return nil
         }
-        let range = NSRange(text.startIndex..., in: text)
-        let matches = detector.matches(in: text, options: [], range: range)
+
+        // Fast pre-check to avoid scanning huge text blobs when the provider strings aren't present.
+        // Use a lowercased check to be robust to event formatting.
+        let lower = text.lowercased()
+        guard Self.videoPatterns.contains(where: { lower.contains($0) }) else {
+            return nil
+        }
+
+        let trimmedText: String = {
+            if lower.count <= Self.maxScannedTextLength { return text }
+            return String(text.prefix(Self.maxScannedTextLength))
+        }()
+
+        let range = NSRange(trimmedText.startIndex..., in: trimmedText)
+        let matches = detector.matches(in: trimmedText, options: [], range: range)
         return matches
             .compactMap { $0.url }
             .first { url in
