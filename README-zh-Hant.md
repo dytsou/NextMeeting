@@ -84,6 +84,19 @@ cd NextMeeting
 2. 按下 **Command+R** 建置並執行
 3. 出現行事曆存取請求時，點擊允許
 
+## 首次開啟與安全性
+
+- **選單列 App：** NextMeeting 在**選單列**執行，啟動後可能**不會出現在 Dock**，請在時鐘附近找圖示。
+- **從終端機開啟：** `.app` 是套件目錄，不能像一般指令直接輸入路徑執行。請用 **`open`**，例如：
+
+  ```bash
+  open /Applications/NextMeeting.app
+  ```
+
+  或在 **Finder → 應用程式** 點兩下 **NextMeeting**。若 Homebrew 因權限改裝到使用者目錄，可試 `open ~/Applications/NextMeeting.app`。
+
+- **Gatekeeper（「Apple 無法驗證…」）：** 目前發行版為 ad-hoc 簽章，**未經 Apple 公證（Notarization）**，第一次開啟時系統可能顯示警告。這代表未通過 Apple 的公證流程，**不代表** Apple 偵測到惡意程式。若你信任[此專案來源](https://github.com/dytsou/NextMeeting)，可這樣做：在 Finder 對 App **按住 Control 點按（或右鍵）→ 開啟**，再於對話框選 **開啟**；或到 **系統設定 → 隱私與安全性**，在列出 NextMeeting 時選 **仍要開啟**。不建議為此關閉整台 Mac 的 Gatekeeper。
+
 ## 專案結構
 
 ```

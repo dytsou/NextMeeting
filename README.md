@@ -7,7 +7,7 @@
 ![Language: Swift](https://img.shields.io/badge/Language-Swift-F05138?logo=swift&logoColor=white)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white)
 [![Build & Release](https://github.com/dytsou/NextMeeting/actions/workflows/build.yml/badge.svg)](https://github.com/dytsou/NextMeeting/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/dytsou/NextMeeting?display_name=tag&sort=semver)](https://github.com/dytsou/NextMeeting/releases)
+[![Latest tag](https://img.shields.io/github/v/release/dytsou/NextMeeting?display_name=tag&sort=semver)](https://github.com/dytsou/NextMeeting/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A macOS menu bar app that shows your next meeting at a glance.
@@ -89,6 +89,19 @@ cd NextMeeting
 1. Go to **Signing & Capabilities** and select your Apple ID team
 2. Press **Command+R** to build and run
 3. Grant calendar access when prompted
+
+## First launch and security
+
+- **Menu bar app:** NextMeeting runs in the **menu bar** and may not appear in the Dock after launch. Look for its icon near the clock.
+- **Opening from Terminal:** An `.app` bundle is a folder, not a shell command. Use **`open`**, for example:
+
+  ```bash
+  open /Applications/NextMeeting.app
+  ```
+
+  Or use Finder → **Applications** → **NextMeeting**. If Homebrew installed to your user folder, try `open ~/Applications/NextMeeting.app`.
+
+- **Gatekeeper (“Apple could not verify…”):** Releases are built with ad-hoc signing and are **not** Apple-notarized, so macOS may show a warning the first time you open the app. This means the binary is not stapled with Apple’s notarization ticket—not that Apple detected malware. If you trust [this source](https://github.com/dytsou/NextMeeting), you can proceed: **Control-click** (or right-click) the app in Finder → **Open**, then confirm **Open**; or go to **System Settings → Privacy & Security** and use **Open Anyway** when NextMeeting is listed. Avoid turning off Gatekeeper entirely for the whole Mac.
 
 ## Project Structure
 
