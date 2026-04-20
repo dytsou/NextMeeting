@@ -33,7 +33,16 @@
 
 開啟**行事曆 App** → 偏好設定 → 帳號 → 新增 Google 帳號。NextMeeting 直接讀取系統行事曆，無需 API 金鑰或 OAuth 授權。
 
-### 2. 建置與安裝
+### 2. 使用 Homebrew 安裝
+
+透過 [Homebrew tap](https://github.com/dytsou/homebrew-nextmeeting) 以 Cask 安裝圖形介面 App：
+
+```bash
+brew tap dytsou/nextmeeting
+brew install --cask nextmeeting
+```
+
+若未使用 Homebrew 安裝，則需先建置 App。
 
 **方式 A — 僅 Command Line Tools**（不需完整 Xcode App）：
 
