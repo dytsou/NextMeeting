@@ -22,14 +22,12 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      # GitHub allows one deploy key per repo — use DEPLOY_KEY on NextMeeting, TAP_DEPLOY_KEY on homebrew-nextmeeting.
-      - name: Setup SSH deploy keys
+      # Only NextMeeting key in the agent — tap updates use TAP_DEPLOY_KEY via GIT_SSH_COMMAND (see Update Homebrew tap cask).
+      - name: Setup SSH deploy key
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: webfactory/ssh-agent@v0.10.0
         with:
-          ssh-private-key: |
-            ${{ secrets.DEPLOY_KEY }}
-            ${{ secrets.TAP_DEPLOY_KEY }}
+          ssh-private-key: ${{ secrets.DEPLOY_KEY }}
 
       - name: Trust GitHub host key
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -113,14 +111,25 @@ jobs:
           files: NextMeeting.zip
           generate_release_notes: true
 
-      # Uses TAP_DEPLOY_KEY (separate key; add its public key to homebrew-nextmeeting Deploy keys with write access).
+      # TAP_DEPLOY_KEY must be the private key whose public key is a write-enabled Deploy key on dytsou/homebrew-nextmeeting only.
+      # Use GIT_SSH_COMMAND so Git does not pick DEPLOY_KEY from the agent (wrong repo → "denied to deploy key").
       - name: Update Homebrew tap cask
         if: github.ref == 'refs/heads/main' && steps.tag_check.outputs.exists == 'false'
         env:
           VERSION: ${{ steps.version.outputs.value }}
           SHA256: ${{ steps.artifact.outputs.sha256 }}
+          TAP_DEPLOY_KEY: ${{ secrets.TAP_DEPLOY_KEY }}
         run: |
           set -euo pipefail
+          if [ -z "${TAP_DEPLOY_KEY:-}" ]; then
+            echo "::error::Secret TAP_DEPLOY_KEY is not set (add the homebrew-nextmeeting deploy key private key)."
+            exit 1
+          fi
+          keyfile=$(mktemp)
+          trap 'rm -f "$keyfile"' EXIT
+          umask 077
+          printf '%s\n' "$TAP_DEPLOY_KEY" > "$keyfile"
+          export GIT_SSH_COMMAND="ssh -i ${keyfile} -o IdentitiesOnly=yes -o UserKnownHostsFile=${HOME}/.ssh/known_hosts"
           tmp=$(mktemp -d)
           git clone --depth 1 git@github.com:dytsou/homebrew-nextmeeting.git "$tmp/tap"
           cask="$tmp/tap/Casks/nextmeeting.rb"
