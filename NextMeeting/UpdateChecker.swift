@@ -24,21 +24,19 @@ final class UpdateChecker: ObservableObject {
     init() {
         let shouldAllowDevOverrides = AppDebug.isEnabled
 
-        // In normal mode, don't load/persist the "update available" UI state.
-        // This prevents stale buttons from sticking around across launches.
-        if !shouldAllowDevOverrides {
-            defaults.removeObject(forKey: UpdateDefaultsKeys.availableVersion)
-            defaults.removeObject(forKey: UpdateDefaultsKeys.availableDownloadURL)
-            self.availableVersion = nil
-            self.availableDownloadURL = nil
-            return
-        }
-
+        // In normal mode, we still load the last known "update available" state so the user
+        // can upgrade immediately (e.g., via Homebrew) without waiting for the next poll.
+        // `checkNow()` will clear this state when it confirms we're up-to-date.
         self.availableVersion = defaults.string(forKey: UpdateDefaultsKeys.availableVersion)
         if let raw = defaults.string(forKey: UpdateDefaultsKeys.availableDownloadURL) {
             self.availableDownloadURL = URL(string: raw)
         } else {
             self.availableDownloadURL = nil
+        }
+
+        if shouldAllowDevOverrides {
+            // Dev mode may overwrite the above values.
+            return
         }
     }
 
