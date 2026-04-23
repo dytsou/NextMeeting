@@ -103,4 +103,8 @@ setup:
 clean:
 	@echo "==> Cleaning..."
 	rm -rf "$(APP)"
+	@echo "==> Clearing cached update state (UserDefaults)..."
+	@defaults delete "$(BUNDLE_ID)" updates.availableVersion 2>/dev/null || true
+	@defaults delete "$(BUNDLE_ID)" updates.availableDownloadURL 2>/dev/null || true
+	@defaults delete "$(BUNDLE_ID)" updates.lastUpdateCheckDate 2>/dev/null || true
 	@echo "Done."
