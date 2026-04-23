@@ -48,6 +48,21 @@ brew tap dytsou/nextmeeting
 brew install --cask nextmeeting
 ```
 
+#### 使用 Homebrew 更新
+
+```bash
+brew upgrade --cask nextmeeting
+```
+
+若更新失敗，可試：
+
+```bash
+brew update
+brew upgrade --cask nextmeeting --verbose
+brew reinstall --cask nextmeeting
+brew doctor
+```
+
 若未使用 Homebrew 安裝，則需先建置 App。
 
 **方式 A — 僅 Command Line Tools**（不需完整 Xcode App）：

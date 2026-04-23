@@ -48,6 +48,21 @@ brew tap dytsou/nextmeeting
 brew install --cask nextmeeting
 ```
 
+#### Upgrade with Homebrew
+
+```bash
+brew upgrade --cask nextmeeting
+```
+
+If the upgrade fails, try:
+
+```bash
+brew update
+brew upgrade --cask nextmeeting --verbose
+brew reinstall --cask nextmeeting
+brew doctor
+```
+
 If not using Homebrew, build the app manually.
 
 **Option A — Command Line Tools only** (no full Xcode app):
