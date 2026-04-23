@@ -7,7 +7,7 @@
 ![Language: Swift](https://img.shields.io/badge/Language-Swift-F05138?logo=swift&logoColor=white)
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white)
 [![Build & Release](https://github.com/dytsou/NextMeeting/actions/workflows/build.yml/badge.svg)](https://github.com/dytsou/NextMeeting/actions/workflows/build.yml)
-[![Latest tag](https://img.shields.io/github/v/release/dytsou/NextMeeting?display_name=tag&sort=semver)](https://github.com/dytsou/NextMeeting/releases)
+![Latest Release](https://img.shields.io/github/v/release/dytsou/NextMeeting?display_name=tag&sort=semver)](https://github.com/dytsou/NextMeeting/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A macOS menu bar app that shows your next meeting at a glance.
