@@ -28,6 +28,9 @@
 "footer.quit" = "結束";
 "footer.copyright" = "Copyright © 2026 dytsou";
 
+/* Update */
+"update.available.title" = "有更新（%@）";
+
 /* Settings */
 "settings.title" = "設定";
 "settings.done" = "完成";

@@ -848,7 +848,7 @@ private struct FooterView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.down.circle.fill")
-                        Text(String(format: NSLocalizedString("Update available (%@)", comment: ""), version))
+                        Text(String(format: NSLocalizedString("update.available.title", comment: ""), version))
                     }
                     .font(.system(size: 12, weight: .semibold))
                 }

@@ -28,6 +28,9 @@
 "footer.quit" = "Quit";
 "footer.copyright" = "Copyright © 2026 dytsou";
 
+/* Update */
+"update.available.title" = "Update available (%@)";
+
 /* Settings */
 "settings.title" = "Settings";
 "settings.done" = "Done";
