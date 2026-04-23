@@ -3,10 +3,14 @@ import Foundation
 /// Shared debug flags usable across the app.
 enum AppDebug {
     /// Set to `"1"` to enable all debug-only behaviors.
-    static let debugModeEnvKey = "DEV"
+    static let debugModeEnvKey = "NEXTMEETING_DEV"
 
     static var isEnabled: Bool {
-        ProcessInfo.processInfo.environment[debugModeEnvKey] == "1" || _isDebugAssertConfiguration()
+        #if DEBUG
+        true
+        #else
+        ProcessInfo.processInfo.environment[debugModeEnvKey] == "1"
+        #endif
     }
 
     static func log(_ message: @autoclosure () -> String) {
