@@ -110,6 +110,22 @@ jobs:
           tag_name: v${{ steps.version.outputs.value }}
           files: NextMeeting.zip
           generate_release_notes: true
+          append_body: true
+          body: |
+            ## Upgrade with Homebrew
+
+            ```bash
+            brew upgrade --cask nextmeeting
+            ```
+
+            ### Troubleshooting
+
+            ```bash
+            brew update
+            brew upgrade --cask nextmeeting --verbose
+            brew reinstall --cask nextmeeting
+            brew doctor
+            ```
 
       # TAP_DEPLOY_KEY must be the private key whose public key is a write-enabled Deploy key on dytsou/homebrew-nextmeeting only.
       # Use GIT_SSH_COMMAND so Git does not pick DEPLOY_KEY from the agent (wrong repo → "denied to deploy key").
