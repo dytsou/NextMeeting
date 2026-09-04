@@ -51,15 +51,52 @@ brew install --cask proximeeting
 #### 使用 Homebrew 更新
 
 ```bash
+brew update
 brew upgrade --cask proximeeting
 ```
 
-若更新失敗，可試：
+`brew update` 只會更新 Homebrew 的 formula 與 tap 中繼資料，不會單獨安裝或升級 App。先確認目前的安裝是否由 Homebrew 管理：
 
 ```bash
-brew update
+brew list --cask --versions proximeeting
+```
+
+如果沒有顯示版本，請先安裝 cask：
+
+```bash
+brew tap dytsou/proximeeting
+brew install --cask proximeeting
+```
+
+如果原本是手動安裝的 App，且安裝時因為已有同名 App 而發生覆蓋錯誤，可使用：
+
+```bash
+brew install --cask --force dytsou/proximeeting/proximeeting
+```
+
+如果 Homebrew 顯示 cask 來自不受信任的 tap，只信任這個 cask 後再重試：
+
+```bash
+brew trust --cask dytsou/proximeeting/proximeeting
+```
+
+安裝完成後，請關閉並重新開啟 ProxiMeeting。如果 Homebrew 顯示 cask 已安裝，但 `/Applications/ProxiMeeting.app` 不存在，請修復 cask 產物：
+
+```bash
+brew reinstall --cask --force dytsou/proximeeting/proximeeting
+```
+
+確認實際安裝版本：
+
+```bash
+/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+  /Applications/ProxiMeeting.app/Contents/Info.plist
+```
+
+如果仍然更新失敗，再收集詳細輸出：
+
+```bash
 brew upgrade --cask proximeeting --verbose
-brew reinstall --cask proximeeting
 brew doctor
 ```
 

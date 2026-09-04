@@ -51,15 +51,52 @@ brew install --cask proximeeting
 #### Upgrade with Homebrew
 
 ```bash
+brew update
 brew upgrade --cask proximeeting
 ```
 
-If the upgrade fails, try:
+`brew update` only refreshes Homebrew's formula and tap metadata; it does not install or upgrade the app by itself. Check whether Homebrew manages the current installation:
 
 ```bash
-brew update
+brew list --cask --versions proximeeting
+```
+
+If no version is shown, install the cask first:
+
+```bash
+brew tap dytsou/proximeeting
+brew install --cask proximeeting
+```
+
+If an existing app that was installed outside Homebrew causes an overwrite error, use:
+
+```bash
+brew install --cask --force dytsou/proximeeting/proximeeting
+```
+
+If Homebrew reports that the cask comes from an untrusted tap, trust only this cask and retry:
+
+```bash
+brew trust --cask dytsou/proximeeting/proximeeting
+```
+
+After installation, quit and reopen ProxiMeeting. If Homebrew reports the cask as installed but `/Applications/ProxiMeeting.app` is missing, repair the cask artifact with:
+
+```bash
+brew reinstall --cask --force dytsou/proximeeting/proximeeting
+```
+
+To verify the installed app version:
+
+```bash
+/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \
+  /Applications/ProxiMeeting.app/Contents/Info.plist
+```
+
+If the upgrade still fails, collect verbose output with:
+
+```bash
 brew upgrade --cask proximeeting --verbose
-brew reinstall --cask proximeeting
 brew doctor
 ```
 
